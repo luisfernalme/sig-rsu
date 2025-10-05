@@ -1,12 +1,67 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Button, Badge, Tab, Tabs, Modal, Form } from 'react-bootstrap';
+import MapComponent from '../components/MapComponent';
+import { collectionPointsAPI } from '../services/api';
 
 const CollectionPoints = () => {
   const [activeTab, setActiveTab] = useState('map');
   const [showModal, setShowModal] = useState(false);
+  const [collectionPoints, setCollectionPoints] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedPoint, setSelectedPoint] = useState(null);
 
-  // Dados simulados para pontos de coleta
-  const collectionPoints = [
+  // Hook para carregar dados reais
+  useEffect(() => {
+    const fetchCollectionPoints = async () => {
+      try {
+        setLoading(true);
+        const response = await collectionPointsAPI.getCollectionPoints();
+        setCollectionPoints(response.results || response);
+      } catch (error) {
+        console.error('Erro ao carregar pontos:', error);
+        // Fallback para dados simulados com coordenadas válidas
+        setCollectionPoints([
+          {
+            id: 1,
+            name: 'Centro da Cidade',
+            code: 'CP001',
+            point_type: 'container',
+            address: 'Praça Central, s/n',
+            neighborhood: 'Centro',
+            latitude: -23.5505,
+            longitude: -46.6333,
+            status: 'active',
+            current_fill_level: 45.5,
+            capacity_volume: 5.0,
+            capacity_weight: 1000,
+            collection_frequency: 'daily'
+          },
+          {
+            id: 2,
+            name: 'Bairro Residencial',
+            code: 'CP002',
+            point_type: 'container',
+            address: 'Rua das Flores, 123',
+            neighborhood: 'Jardim das Flores',
+            latitude: -23.5600,
+            longitude: -46.6400,
+            status: 'active',
+            current_fill_level: 78.2,
+            capacity_volume: 4.0,
+            capacity_weight: 800,
+            collection_frequency: 'daily'
+          }
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCollectionPoints();
+  }, []);
+
+  // Dados simulados para fallback
+  const simulatedPoints = [
     {
       id: 1,
       name: 'Ponto Centro - Praça Central',
@@ -145,13 +200,24 @@ const CollectionPoints = () => {
         <Tab eventKey="map" title={<><i className="fas fa-map me-2"></i>Mapa</>}>
           <Card>
             <Card.Body>
-              <div className="map-container bg-light d-flex align-items-center justify-content-center" style={{ minHeight: '500px' }}>
-                <div className="text-center text-muted">
-                  <i className="fas fa-map-marked-alt fa-3x mb-3"></i>
-                  <p>Mapa interativo com pontos de coleta será implementado aqui</p>
-                  <small>Visualização geográfica de todos os pontos de coleta</small>
+              {loading ? (
+                <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '500px' }}>
+                  <div className="spinner-border text-primary" role="status">
+                    <span className="visually-hidden">Carregando...</span>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <MapComponent
+                  center={[-23.5505, -46.6333]}
+                  zoom={12}
+                  points={collectionPoints.filter(point => 
+                    point.latitude && point.longitude && 
+                    !isNaN(point.latitude) && !isNaN(point.longitude)
+                  )}
+                  onPointClick={setSelectedPoint}
+                  style={{ height: '500px', width: '100%' }}
+                />
+              )}
             </Card.Body>
           </Card>
         </Tab>

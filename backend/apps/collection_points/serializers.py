@@ -25,18 +25,20 @@ class CollectionPointSerializer(serializers.ModelSerializer):
     frequency_display = serializers.CharField(source='get_collection_frequency_display', read_only=True)
     fill_level_percentage = serializers.SerializerMethodField()
     days_since_collection = serializers.SerializerMethodField()
+    latitude = serializers.SerializerMethodField()
+    longitude = serializers.SerializerMethodField()
     
     class Meta:
         model = CollectionPoint
         fields = [
             'id', 'name', 'code', 'point_type', 'type_display', 'location',
-            'address', 'neighborhood', 'capacity_volume', 'capacity_weight',
-            'status', 'status_display', 'current_fill_level', 'fill_level_percentage',
-            'collection_frequency', 'frequency_display', 'last_collection',
-            'next_collection', 'days_since_collection', 'created_by', 'created_by_name',
-            'created_at', 'updated_at'
+            'latitude', 'longitude', 'address', 'neighborhood', 'capacity_volume', 
+            'capacity_weight', 'status', 'status_display', 'current_fill_level', 
+            'fill_level_percentage', 'collection_frequency', 'frequency_display', 
+            'last_collection', 'next_collection', 'days_since_collection', 
+            'created_by', 'created_by_name', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'latitude', 'longitude', 'created_at', 'updated_at']
     
     def get_fill_level_percentage(self, obj):
         """
@@ -52,6 +54,22 @@ class CollectionPointSerializer(serializers.ModelSerializer):
             from datetime import date
             delta = date.today() - obj.last_collection.date()
             return delta.days
+        return None
+    
+    def get_latitude(self, obj):
+        """
+        Latitude do ponto
+        """
+        if obj.location:
+            return obj.location.y
+        return None
+    
+    def get_longitude(self, obj):
+        """
+        Longitude do ponto
+        """
+        if obj.location:
+            return obj.location.x
         return None
     
     def validate_code(self, value):

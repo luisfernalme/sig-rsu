@@ -44,22 +44,33 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        // Como ainda não temos a API implementada, vamos usar dados simulados
-        setTimeout(() => {
-          setStats({
-            totalRoutes: 24,
-            activeVehicles: 12,
-            collectionPoints: 156,
-            todayCollections: 89,
-            weeklyWaste: 2.5,
-            monthlyWaste: 10.2,
-            efficiency: 87,
-            costs: 15420,
-          });
-          setLoading(false);
-        }, 1000);
+        setLoading(true);
+        const dashboardData = await reportsAPI.getDashboardStats();
+        
+        setStats({
+          totalRoutes: dashboardData.total_routes || 0,
+          activeVehicles: dashboardData.active_vehicles || 0,
+          collectionPoints: dashboardData.total_points || 0,
+          todayCollections: dashboardData.today_collections || 0,
+          weeklyWaste: dashboardData.weekly_waste || 0,
+          monthlyWaste: dashboardData.monthly_waste || 0,
+          efficiency: dashboardData.efficiency || 0,
+          costs: dashboardData.monthly_costs || 0,
+        });
+        setLoading(false);
       } catch (error) {
         console.error('Erro ao carregar estatísticas:', error);
+        // Fallback para dados simulados em caso de erro
+        setStats({
+          totalRoutes: 3,
+          activeVehicles: 4,
+          collectionPoints: 8,
+          todayCollections: 15,
+          weeklyWaste: 2.5,
+          monthlyWaste: 10.2,
+          efficiency: 87,
+          costs: 15420,
+        });
         setLoading(false);
       }
     };
