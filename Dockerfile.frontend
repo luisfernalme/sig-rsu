@@ -1,0 +1,25 @@
+FROM node:18-alpine
+
+# Definir diretório de trabalho
+WORKDIR /app
+
+# Copiar package.json
+COPY frontend/package.json ./
+
+# Instalar todas as dependências (incluindo dev para o build)
+RUN npm install
+
+# Copiar código da aplicação
+COPY frontend/ .
+
+# Build da aplicação
+RUN npm run build
+
+# Instalar servidor estático
+RUN npm install -g serve
+
+# Expor porta
+EXPOSE 3000
+
+# Comando para servir a aplicação
+CMD ["serve", "-s", "build", "-l", "3000"]

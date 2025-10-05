@@ -1,0 +1,84 @@
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+/* Custom styles for the waste collection system */
+.navbar-brand {
+  font-weight: bold;
+}
+
+.map-container {
+  height: 500px;
+  width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.dashboard-card {
+  transition: transform 0.2s;
+}
+
+.dashboard-card:hover {
+  transform: translateY(-2px);
+}
+
+.sidebar {
+  min-height: 100vh;
+  background-color: #f8f9fa;
+}
+
+.main-content {
+  padding: 20px;
+}
+
+.status-badge {
+  font-size: 0.875rem;
+}
+
+.loading-spinner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+}
+
+/* Leaflet custom styles */
+.leaflet-container {
+  font-family: inherit;
+}
+
+.custom-popup {
+  font-size: 14px;
+}
+
+.route-line {
+  stroke-width: 4;
+  stroke-opacity: 0.8;
+}
+
+.collection-point-marker {
+  border-radius: 50%;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .sidebar {
+    min-height: auto;
+  }
+  
+  .map-container {
+    height: 300px;
+  }
+}

@@ -1,0 +1,47 @@
+# Core Django packages
+Django==4.2.7
+djangorestframework==3.14.0
+django-cors-headers==4.3.1
+django-filter==23.3
+python-decouple==3.8
+dj-database-url==2.1.0
+
+# Database
+psycopg2-binary==2.9.7
+django-extensions==3.2.3
+
+# GIS support
+gdal==3.7.3
+Pillow==10.0.1
+
+# Background tasks
+celery==5.3.4
+redis==5.0.1
+django-celery-beat==2.5.0
+
+# Authentication & Security
+djangorestframework-simplejwt==5.3.0
+django-allauth==0.57.0
+cryptography==41.0.7
+
+# API Documentation
+drf-spectacular==0.26.5
+
+# Development tools
+django-debug-toolbar==4.2.0
+ipython==8.16.1
+
+# Utilities
+requests==2.31.0
+python-dateutil==2.8.2
+pytz==2023.3
+
+# Testing
+pytest==7.4.3
+pytest-django==4.5.2
+factory-boy==3.3.0
+
+# Code quality
+flake8==6.1.0
+black==23.9.1
+isort==5.12.0

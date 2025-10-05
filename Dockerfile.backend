@@ -1,0 +1,41 @@
+FROM python:3.11-slim
+
+# Definir variáveis de ambiente
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+# Instalar dependências do sistema para PostGIS e PostgreSQL
+RUN apt-get update && apt-get install -y \
+    gdal-bin \
+    libgdal-dev \
+    libpq-dev \
+    postgresql-client \
+    gcc \
+    g++ \
+    python3-dev \
+    build-essential \
+    netcat-openbsd \
+    && rm -rf /var/lib/apt/lists/*
+
+# Definir diretório de trabalho
+WORKDIR /app
+
+# Copiar requirements e instalar dependências Python
+COPY backend/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copiar script de entrada
+COPY docker/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# Copiar código da aplicação
+COPY backend/ .
+
+# Criar diretório para arquivos estáticos
+RUN mkdir -p /app/static
+
+# Expor porta
+EXPOSE 8000
+
+# Script de inicialização
+ENTRYPOINT ["/entrypoint.sh"]
