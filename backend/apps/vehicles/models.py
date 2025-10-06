@@ -41,6 +41,15 @@ class Vehicle(models.Model):
     # Custos
     purchase_value = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name='Valor de Compra')
     current_odometer = models.FloatField(default=0, verbose_name='Odômetro Atual (km)')
+    # Alocação atual (opcional)
+    current_driver = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='current_vehicle',
+        verbose_name='Motorista Atual'
+    )
     
     # Metadados
     created_at = models.DateTimeField(auto_now_add=True)

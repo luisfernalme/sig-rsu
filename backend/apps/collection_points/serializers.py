@@ -25,20 +25,27 @@ class CollectionPointSerializer(serializers.ModelSerializer):
     frequency_display = serializers.CharField(source='get_collection_frequency_display', read_only=True)
     fill_level_percentage = serializers.SerializerMethodField()
     days_since_collection = serializers.SerializerMethodField()
-    latitude = serializers.SerializerMethodField()
-    longitude = serializers.SerializerMethodField()
+    latitude = serializers.FloatField(write_only=True, required=False)
+    longitude = serializers.FloatField(write_only=True, required=False)
+    
+    # Campos de leitura para coordenadas
+    latitude_read = serializers.SerializerMethodField()
+    longitude_read = serializers.SerializerMethodField()
+    # aliases legíveis
+    latitude_out = serializers.SerializerMethodField()
+    longitude_out = serializers.SerializerMethodField()
     
     class Meta:
         model = CollectionPoint
         fields = [
             'id', 'name', 'code', 'point_type', 'type_display', 'location',
-            'latitude', 'longitude', 'address', 'neighborhood', 'capacity_volume', 
+            'latitude', 'longitude', 'latitude_read', 'longitude_read', 'latitude_out', 'longitude_out', 'address', 'neighborhood', 'capacity_volume', 
             'capacity_weight', 'status', 'status_display', 'current_fill_level', 
             'fill_level_percentage', 'collection_frequency', 'frequency_display', 
             'last_collection', 'next_collection', 'days_since_collection', 
             'created_by', 'created_by_name', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'latitude', 'longitude', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'created_at', 'updated_at']
     
     def get_fill_level_percentage(self, obj):
         """
@@ -56,7 +63,7 @@ class CollectionPointSerializer(serializers.ModelSerializer):
             return delta.days
         return None
     
-    def get_latitude(self, obj):
+    def get_latitude_read(self, obj):
         """
         Latitude do ponto
         """
@@ -64,13 +71,19 @@ class CollectionPointSerializer(serializers.ModelSerializer):
             return obj.location.y
         return None
     
-    def get_longitude(self, obj):
+    def get_longitude_read(self, obj):
         """
         Longitude do ponto
         """
         if obj.location:
             return obj.location.x
         return None
+
+    def get_latitude_out(self, obj):
+        return self.get_latitude_read(obj)
+
+    def get_longitude_out(self, obj):
+        return self.get_longitude_read(obj)
     
     def validate_code(self, value):
         """
@@ -90,6 +103,58 @@ class CollectionPointSerializer(serializers.ModelSerializer):
         if value < 0 or value > 100:
             raise serializers.ValidationError("Nível deve estar entre 0 e 100%.")
         return value
+    
+    def create(self, validated_data):
+        """
+        Criar ponto de coleta com latitude e longitude
+        """
+        from django.contrib.gis.geos import Point
+        
+        # Extrair latitude e longitude se presentes
+        latitude = validated_data.pop('latitude', None)
+        longitude = validated_data.pop('longitude', None)
+        
+        # Se latitude e longitude foram fornecidas, criar Point
+        if latitude is not None and longitude is not None:
+            validated_data['location'] = Point(float(longitude), float(latitude))
+        
+        return super().create(validated_data)
+    
+    def update(self, instance, validated_data):
+        """
+        Atualizar ponto de coleta com latitude e longitude
+        """
+        from django.contrib.gis.geos import Point
+        
+        # Extrair latitude e longitude se presentes
+        latitude = validated_data.pop('latitude', None)
+        longitude = validated_data.pop('longitude', None)
+        
+        # Se latitude e longitude foram fornecidas, atualizar Point
+        if latitude is not None and longitude is not None:
+            validated_data['location'] = Point(float(longitude), float(latitude))
+        
+        return super().update(instance, validated_data)
+    
+    def to_internal_value(self, data):
+        """
+        Converter dados de entrada incluindo latitude e longitude
+        """
+        # Permitir latitude e longitude como campos de entrada
+        if 'latitude' in data and 'longitude' in data:
+            # Manter os campos para processamento no create/update
+            pass
+        
+        return super().to_internal_value(data)
+
+    def to_representation(self, instance):
+        """
+        Incluir latitude/longitude no output para compatibilidade com o frontend
+        """
+        rep = super().to_representation(instance)
+        rep['latitude'] = self.get_latitude_read(instance)
+        rep['longitude'] = self.get_longitude_read(instance)
+        return rep
 
 
 class CollectionPointRouteSerializer(serializers.ModelSerializer):

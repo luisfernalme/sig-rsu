@@ -1,0 +1,62 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "docker-migrate-backend",
+			"type": "shell",
+			"command": "docker-compose",
+			"args": [
+				"-f",
+				"./docker-compose.yml",
+				"exec",
+				"-T",
+				"backend",
+				"python",
+				"manage.py",
+				"makemigrations",
+				"--noinput"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "docker-migrate-backend",
+			"type": "shell",
+			"command": "docker-compose",
+			"args": [
+				"-f",
+				"./docker-compose.yml",
+				"exec",
+				"-T",
+				"backend",
+				"python",
+				"manage.py",
+				"makemigrations",
+				"--noinput"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "docker-migrate-apply",
+			"type": "shell",
+			"command": "docker-compose",
+			"args": [
+				"-f",
+				"./docker-compose.yml",
+				"exec",
+				"-T",
+				"backend",
+				"python",
+				"manage.py",
+				"migrate",
+				"--noinput"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		}
+	]
+}

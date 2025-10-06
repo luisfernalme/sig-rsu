@@ -94,6 +94,11 @@ class PublicAPIViewSet(viewsets.ViewSet):
         
         serializer = CollectionScheduleSerializer(data)
         return Response(serializer.data)
+
+    # Alias compatível com frontend: /public/schedule/
+    @action(detail=False, methods=['get'], url_path='schedule')
+    def schedule_alias(self, request):
+        return self.collection_schedule(request)
     
     @action(detail=False, methods=['get'])
     def stats(self, request):
@@ -337,25 +342,31 @@ def collection_points_map(request):
     )
     
     # Converter para formato adequado para mapas
-    map_points = []
-    for point in points:
-        if point['location']:
-            map_points.append({
-                'id': point['id'],
-                'name': point['name'],
-                'code': point['code'],
-                'type': point['point_type'],
-                'address': point['address'],
-                'neighborhood': point['neighborhood'],
-                'lat': point['location'].y if hasattr(point['location'], 'y') else 0,
-                'lng': point['location'].x if hasattr(point['location'], 'x') else 0,
-                'fill_level': point['current_fill_level'],
-                'status': 'full' if point['current_fill_level'] >= 80 else 'normal'
+    # GeoJSON FeatureCollection
+    features = []
+    for point in CollectionPoint.objects.filter(status='active'):
+        if point.location:
+            features.append({
+                'type': 'Feature',
+                'geometry': {
+                    'type': 'Point',
+                    'coordinates': [point.location.x, point.location.y]
+                },
+                'properties': {
+                    'id': point.id,
+                    'name': point.name,
+                    'code': point.code,
+                    'type': point.point_type,
+                    'address': point.address,
+                    'neighborhood': point.neighborhood,
+                    'fill_level': point.current_fill_level,
+                    'status': 'full' if point.current_fill_level >= 80 else 'normal'
+                }
             })
-    
     return Response({
-        'points': map_points,
-        'total': len(map_points)
+        'type': 'FeatureCollection',
+        'features': features,
+        'total': len(features)
     })
 
 
@@ -369,18 +380,26 @@ def routes_map(request):
         'id', 'name', 'description', 'frequency', 'geometry'
     )
     
-    map_routes = []
-    for route in routes:
-        if route['geometry']:
-            map_routes.append({
-                'id': route['id'],
-                'name': route['name'],
-                'description': route['description'],
-                'frequency': route['frequency'],
-                'geometry': route['geometry']  # GeoJSON será processado pelo frontend
+    features = []
+    from apps.routes.models import Route as RouteModel
+    for r in RouteModel.objects.filter(status='active'):
+        if r.geometry:
+            coords = [[pt[0], pt[1]] for pt in list(r.geometry.coords)] if hasattr(r.geometry, 'coords') else []
+            features.append({
+                'type': 'Feature',
+                'geometry': {
+                    'type': 'LineString',
+                    'coordinates': coords
+                },
+                'properties': {
+                    'id': r.id,
+                    'name': r.name,
+                    'description': r.description,
+                    'frequency': r.frequency,
+                }
             })
-    
     return Response({
-        'routes': map_routes,
-        'total': len(map_routes)
+        'type': 'FeatureCollection',
+        'features': features,
+        'total': len(features)
     })

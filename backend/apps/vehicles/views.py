@@ -145,6 +145,11 @@ class VehicleViewSet(viewsets.ModelViewSet):
         
         serializer = VehicleGPSTrackerSerializer(gps_tracks, many=True)
         return Response(serializer.data)
+
+    # Alias compatível com frontend: /vehicles/{id}/tracking/
+    @action(detail=True, methods=['get'], url_path='tracking')
+    def tracking(self, request, pk=None):
+        return self.gps_history(request, pk)
     
     @action(detail=True, methods=['get'])
     def maintenance_history(self, request, pk=None):
@@ -274,16 +279,16 @@ class VehicleMaintenanceViewSet(viewsets.ModelViewSet):
             return Response({
                 'error': 'Manutenção já foi concluída.'
             }, status=status.HTTP_400_BAD_REQUEST)
-        
+
         maintenance.is_completed = True
-        maintenance.completed_date = request.data.get('completed_date', date.today())
+        maintenance.actual_date = request.data.get('completed_date', date.today())
         maintenance.cost = request.data.get('cost', maintenance.cost)
         maintenance.notes = request.data.get('notes', maintenance.notes)
         maintenance.save()
-        
+
         # Atualizar data da última manutenção no veículo
         vehicle = maintenance.vehicle
-        vehicle.last_maintenance = maintenance.completed_date
+        vehicle.last_maintenance = maintenance.actual_date
         vehicle.save()
         
         return Response({
@@ -313,7 +318,7 @@ class VehicleMaintenanceViewSet(viewsets.ModelViewSet):
                 is_completed=True,
                 cost__isnull=False
             ).aggregate(
-                total=Count('cost')
+                total=Sum('cost')
             )['total'] or 0
         }
         

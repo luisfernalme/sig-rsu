@@ -17,10 +17,14 @@ const MapComponent = ({
   routes = [],
   vehicles = [],
   onPointClick = null,
+  onMapClick = null,
+  isSelectionMode = false,
+  selectedLocation = null,
   style = { height: '500px', width: '100%' }
 }) => {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
+  const selectionMarkerRef = useRef(null);
 
   useEffect(() => {
     if (!mapInstanceRef.current) {
@@ -31,6 +35,14 @@ const MapComponent = ({
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap contributors'
       }).addTo(mapInstanceRef.current);
+
+      // Adicionar listener de clique no mapa para seleção de localização
+      if (onMapClick) {
+        mapInstanceRef.current.on('click', (e) => {
+          const { lat, lng } = e.latlng;
+          onMapClick({ latitude: lat, longitude: lng });
+        });
+      }
     }
 
     return () => {
@@ -143,6 +155,46 @@ const MapComponent = ({
     });
 
   }, [points, routes, vehicles]);
+
+  // Gerenciar marcador de seleção
+  useEffect(() => {
+    if (!mapInstanceRef.current) return;
+
+    const map = mapInstanceRef.current;
+
+    // Remover marcador anterior se existir
+    if (selectionMarkerRef.current) {
+      map.removeLayer(selectionMarkerRef.current);
+      selectionMarkerRef.current = null;
+    }
+
+    // Adicionar novo marcador se há localização selecionada
+    if (selectedLocation && selectedLocation.latitude && selectedLocation.longitude) {
+      const selectionIcon = L.divIcon({
+        html: `<i class="fas fa-map-pin" style="color: #dc3545; font-size: 30px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);"></i>`,
+        iconSize: [30, 30],
+        iconAnchor: [15, 30],
+        className: 'selection-marker'
+      });
+
+      selectionMarkerRef.current = L.marker(
+        [selectedLocation.latitude, selectedLocation.longitude], 
+        { icon: selectionIcon }
+      )
+        .addTo(map)
+        .bindPopup(`
+          <div>
+            <h6><i class="fas fa-map-pin me-1 text-danger"></i> Local Selecionado</h6>
+            <p><strong>Coordenadas:</strong></p>
+            <p>Lat: ${selectedLocation.latitude.toFixed(6)}</p>
+            <p>Lng: ${selectedLocation.longitude.toFixed(6)}</p>
+          </div>
+        `);
+
+      // Centralizar mapa na localização selecionada
+      map.setView([selectedLocation.latitude, selectedLocation.longitude], map.getZoom());
+    }
+  }, [selectedLocation]);
 
   const getStatusBadgeClass = (status) => {
     switch (status) {

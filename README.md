@@ -14,7 +14,7 @@ Sistema web completo para gerenciamento e controle da coleta de resíduos sólid
 1. **Clone o repositório** (se necessário):
    ```bash
    git clone <url-do-repositorio>
-   cd Teste
+   cd sistema-coleta-rsu
    ```
 
 2. **Execute o script de inicialização**:
@@ -200,12 +200,13 @@ docker-compose exec frontend npm test
 docker-compose exec frontend npm run build
 ```
 
-## 📖 API Documentation
+## 📖 Documentação da API
 
 Com o sistema rodando, acesse:
-- Swagger UI: http://localhost:8000/api/schema/swagger-ui/
-- ReDoc: http://localhost:8000/api/schema/redoc/
+- Swagger UI (preferido): http://localhost:8000/api/docs/
+- ReDoc: http://localhost:8000/api/redoc/
 - Schema JSON: http://localhost:8000/api/schema/
+- Compatibilidade: http://localhost:8000/api/schema/swagger-ui/ e http://localhost:8000/api/schema/redoc/
 
 ## 🎯 Uso do Sistema
 

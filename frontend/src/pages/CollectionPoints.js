@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Button, Badge, Tab, Tabs, Modal, Form } from 'react-bootstrap';
+import { Container, Row, Col, Card, Button, Badge, Tab, Tabs, Table, Spinner } from 'react-bootstrap';
 import MapComponent from '../components/MapComponent';
+import CollectionPointModal from '../components/CollectionPointModal';
 import { collectionPointsAPI } from '../services/api';
+import toast from 'react-hot-toast';
 
 const CollectionPoints = () => {
   const [activeTab, setActiveTab] = useState('map');
@@ -9,6 +11,8 @@ const CollectionPoints = () => {
   const [collectionPoints, setCollectionPoints] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedPoint, setSelectedPoint] = useState(null);
+  const [editingPoint, setEditingPoint] = useState(null);
+  const [saveLoading, setSaveLoading] = useState(false);
 
   // Hook para carregar dados reais
   useEffect(() => {
@@ -59,6 +63,59 @@ const CollectionPoints = () => {
 
     fetchCollectionPoints();
   }, []);
+
+  const handleCreatePoint = () => {
+    setEditingPoint(null);
+    setShowModal(true);
+  };
+
+  const handleEditPoint = (point) => {
+    setEditingPoint(point);
+    setShowModal(true);
+  };
+
+  const handleSavePoint = async (pointData) => {
+    try {
+      setSaveLoading(true);
+      
+      if (editingPoint) {
+        // Atualizar ponto existente
+        await collectionPointsAPI.updateCollectionPoint(editingPoint.id, pointData);
+        toast.success('Ponto de coleta atualizado com sucesso!');
+      } else {
+        // Criar novo ponto
+        await collectionPointsAPI.createCollectionPoint(pointData);
+        toast.success('Ponto de coleta criado com sucesso!');
+      }
+      
+      // Recarregar lista
+      const response = await collectionPointsAPI.getCollectionPoints();
+      setCollectionPoints(response.results || response);
+      
+      setShowModal(false);
+      setEditingPoint(null);
+    } catch (error) {
+      console.error('Erro ao salvar ponto:', error);
+      toast.error('Erro ao salvar ponto de coleta. Tente novamente.');
+    } finally {
+      setSaveLoading(false);
+    }
+  };
+
+  const handleDeletePoint = async (pointId) => {
+    if (window.confirm('Tem certeza que deseja excluir este ponto de coleta?')) {
+      try {
+        await collectionPointsAPI.deleteCollectionPoint(pointId);
+        toast.success('Ponto de coleta excluído com sucesso!');
+        
+        // Remover da lista local
+        setCollectionPoints(prev => prev.filter(point => point.id !== pointId));
+      } catch (error) {
+        console.error('Erro ao excluir ponto:', error);
+        toast.error('Erro ao excluir ponto de coleta.');
+      }
+    }
+  };
 
   // Dados simulados para fallback
   const simulatedPoints = [
@@ -188,7 +245,7 @@ const CollectionPoints = () => {
               </h2>
               <p className="text-muted">Gerencie os pontos de coleta de resíduos</p>
             </div>
-            <Button variant="primary" onClick={() => setShowModal(true)}>
+            <Button variant="primary" onClick={handleCreatePoint}>
               <i className="fas fa-plus me-2"></i>
               Novo Ponto
             </Button>
@@ -351,112 +408,14 @@ const CollectionPoints = () => {
         </Tab>
       </Tabs>
 
-      {/* Modal para novo ponto */}
-      <Modal show={showModal} onHide={() => setShowModal(false)} size="lg">
-        <Modal.Header closeButton>
-          <Modal.Title>Novo Ponto de Coleta</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form>
-            <Row>
-              <Col md={6}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Nome do Ponto</Form.Label>
-                  <Form.Control type="text" placeholder="Ex: Ponto Centro - Praça Central" />
-                </Form.Group>
-              </Col>
-              <Col md={6}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Tipo</Form.Label>
-                  <Form.Select>
-                    <option value="">Selecione o tipo</option>
-                    <option value="residencial">Residencial</option>
-                    <option value="comercial">Comercial</option>
-                    <option value="industrial">Industrial</option>
-                    <option value="especial">Especial</option>
-                  </Form.Select>
-                </Form.Group>
-              </Col>
-            </Row>
-
-            <Row>
-              <Col md={8}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Endereço</Form.Label>
-                  <Form.Control type="text" placeholder="Endereço completo" />
-                </Form.Group>
-              </Col>
-              <Col md={4}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Bairro</Form.Label>
-                  <Form.Control type="text" placeholder="Bairro" />
-                </Form.Group>
-              </Col>
-            </Row>
-
-            <Row>
-              <Col md={6}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Latitude</Form.Label>
-                  <Form.Control type="number" step="any" placeholder="-23.550520" />
-                </Form.Group>
-              </Col>
-              <Col md={6}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Longitude</Form.Label>
-                  <Form.Control type="number" step="any" placeholder="-46.633308" />
-                </Form.Group>
-              </Col>
-            </Row>
-
-            <Row>
-              <Col md={6}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Frequência de Coleta</Form.Label>
-                  <Form.Select>
-                    <option value="">Selecione a frequência</option>
-                    <option value="diaria">Diária</option>
-                    <option value="bi_diaria">Bi-diária</option>
-                    <option value="alternada">Alternada</option>
-                    <option value="semanal">Semanal</option>
-                  </Form.Select>
-                </Form.Group>
-              </Col>
-              <Col md={6}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Tipo de Container</Form.Label>
-                  <Form.Select>
-                    <option value="">Selecione o container</option>
-                    <option value="lixeira_comum">Lixeira Comum</option>
-                    <option value="container_grande">Container Grande</option>
-                    <option value="container_especial">Container Especial</option>
-                    <option value="compactador">Compactador</option>
-                  </Form.Select>
-                </Form.Group>
-              </Col>
-            </Row>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Capacidade (litros)</Form.Label>
-              <Form.Control type="number" placeholder="240" />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Observações</Form.Label>
-              <Form.Control as="textarea" rows={3} placeholder="Observações adicionais sobre o ponto de coleta" />
-            </Form.Group>
-          </Form>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowModal(false)}>
-            Cancelar
-          </Button>
-          <Button variant="primary">
-            <i className="fas fa-save me-2"></i>
-            Salvar Ponto
-          </Button>
-        </Modal.Footer>
-      </Modal>
+      {/* Modal para adicionar/editar ponto */}
+      <CollectionPointModal
+        show={showModal}
+        onHide={() => setShowModal(false)}
+        onSave={handleSavePoint}
+        editPoint={editingPoint}
+        loading={saveLoading}
+      />
     </Container>
   );
 };

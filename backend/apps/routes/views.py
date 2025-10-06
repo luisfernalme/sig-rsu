@@ -116,13 +116,14 @@ class RouteViewSet(viewsets.ModelViewSet):
         
         # Criar registro de otimização
         optimization = RouteOptimization.objects.create(
-            route=route,
+            original_route=route,
+            optimized_geometry=route.geometry,  # placeholder: reutiliza geometria
             original_distance=original_distance,
             optimized_distance=optimized_distance,
-            savings_distance=savings,
-            optimization_algorithm='basic_nearest_neighbor',
-            execution_time=0.5,  # Tempo simulado
-            optimized_sequence=list(range(1, collection_points.count() + 1))
+            distance_saved=savings,
+            original_duration=route.estimated_duration,
+            optimized_duration=route.estimated_duration,
+            algorithm_used='basic_nearest_neighbor',
         )
         
         # Atualizar distância estimada da rota
@@ -353,7 +354,7 @@ class RouteOptimizationViewSet(viewsets.ReadOnlyModelViewSet):
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_fields = ['original_route']
     ordering_fields = ['optimization_date', 'distance_saved']
-    ordering = ['-created_at']
+    ordering = ['-optimization_date']
     
     @action(detail=False, methods=['get'])
     def stats(self, request):
