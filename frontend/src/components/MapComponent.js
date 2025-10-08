@@ -20,6 +20,7 @@ const MapComponent = ({
   onMapClick = null,
   isSelectionMode = false,
   selectedLocation = null,
+  centerOnPoint = null,
   style = { height: '500px', width: '100%' }
 }) => {
   const mapRef = useRef(null);
@@ -195,6 +196,46 @@ const MapComponent = ({
       map.setView([selectedLocation.latitude, selectedLocation.longitude], map.getZoom());
     }
   }, [selectedLocation]);
+
+  // Centralizar mapa em um ponto específico
+  useEffect(() => {
+    if (!mapInstanceRef.current || !centerOnPoint) return;
+
+    const map = mapInstanceRef.current;
+    const lat = centerOnPoint.latitude;
+    const lng = centerOnPoint.longitude;
+
+    if (lat && lng && !isNaN(lat) && !isNaN(lng)) {
+      // Fechar todos os popups abertos primeiro
+      map.closePopup();
+      
+      // Pequeno delay para garantir que o mapa está pronto
+      setTimeout(() => {
+        // Centralizar e dar zoom no ponto com flyTo para animação mais suave
+        map.flyTo([lat, lng], 18, {
+          animate: true,
+          duration: 1.5
+        });
+
+        // Aguardar animação terminar para abrir o popup
+        setTimeout(() => {
+          // Encontrar e abrir o popup do marcador
+          let foundMarker = false;
+          map.eachLayer(layer => {
+            if (layer instanceof L.Marker && !foundMarker) {
+              const markerLatLng = layer.getLatLng();
+              // Usar comparação com tolerância por causa de arredondamento
+              if (Math.abs(markerLatLng.lat - lat) < 0.0001 && 
+                  Math.abs(markerLatLng.lng - lng) < 0.0001) {
+                layer.openPopup();
+                foundMarker = true;
+              }
+            }
+          });
+        }, 1500);
+      }, 50);
+    }
+  }, [centerOnPoint]);
 
   const getStatusBadgeClass = (status) => {
     switch (status) {

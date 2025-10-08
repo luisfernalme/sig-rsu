@@ -1,0 +1,418 @@
+/* Container principal com mapa em tela cheia */
+.collection-points-container {
+  position: fixed;
+  top: 56px; /* Altura da navbar */
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  overflow: hidden;
+  background-color: #f8f9fa;
+}
+
+/* Sidebar lateral */
+.collection-points-container .sidebar {
+  position: relative;
+  background: #ffffff;
+  border-right: 1px solid #dee2e6;
+  color: #212529;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.08);
+  z-index: 1000;
+}
+
+.collection-points-container .sidebar.open {
+  width: 380px;
+  min-width: 380px;
+}
+
+.collection-points-container .sidebar.closed {
+  width: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.collection-points-container .sidebar-header {
+  padding: 20px;
+  background: #0d6efd;
+  color: white;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+
+.collection-points-container .sidebar-header h5 {
+  color: white;
+  font-weight: 700;
+  margin: 0;
+}
+
+.collection-points-container .sidebar-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background-color: #f8f9fa;
+  color: #212529;
+}
+
+.collection-points-container .sidebar-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.collection-points-container .sidebar-content::-webkit-scrollbar-track {
+  background: #e9ecef;
+}
+
+.collection-points-container .sidebar-content::-webkit-scrollbar-thumb {
+  background: #adb5bd;
+  border-radius: 3px;
+}
+
+.collection-points-container .sidebar-content::-webkit-scrollbar-thumb:hover {
+  background: #6c757d;
+}
+
+/* Botão toggle da sidebar quando fechada */
+.collection-points-container .sidebar-toggle {
+  position: fixed;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 999;
+  border-radius: 0 8px 8px 0;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.15);
+  padding: 15px 10px;
+}
+
+/* Grid de estatísticas */
+.collection-points-container .stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.collection-points-container .stat-card {
+  background: rgba(255, 255, 255, 0.95);
+  padding: 15px;
+  border-radius: 8px;
+  text-align: center;
+  transition: all 0.2s;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.collection-points-container .stat-card:hover {
+  background: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.collection-points-container .stat-value {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: 5px;
+}
+
+.collection-points-container .stat-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Itens da lista de pontos */
+.collection-points-container .point-item {
+  border: none !important;
+  border-bottom: 1px solid #e9ecef !important;
+  padding: 15px !important;
+  cursor: pointer;
+  transition: all 0.2s;
+  background-color: white !important;
+  margin-bottom: 0 !important;
+  color: #212529;
+}
+
+.collection-points-container .point-item .fw-bold {
+  color: #212529;
+  font-weight: 600;
+}
+
+.collection-points-container .point-item .text-muted,
+.collection-points-container .point-item .small {
+  color: #6c757d !important;
+}
+
+.collection-points-container .point-item:hover {
+  background-color: #f8f9fa !important;
+  transform: translateX(3px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.collection-points-container .point-item.active {
+  background-color: #e7f1ff !important;
+  border-left: 4px solid #0d6efd !important;
+  box-shadow: 0 2px 8px rgba(13, 110, 253, 0.15);
+}
+
+/* Mapa em tela cheia */
+.map-fullscreen {
+  flex: 1;
+  position: relative;
+  height: 100%;
+}
+
+/* Card de detalhes do ponto */
+.collection-points-container .point-details-card {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  border: 1px solid #dee2e6;
+  padding: 24px;
+  max-width: 360px;
+  z-index: 1000;
+  animation: slideInRight 0.3s ease;
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.collection-points-container .point-details-card h5 {
+  color: #212529;
+  font-weight: 700;
+  font-size: 1.25rem;
+  margin-bottom: 16px;
+}
+
+.collection-points-container .point-details-card .badge {
+  font-size: 0.75rem;
+  padding: 6px 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.collection-points-container .point-details-card small {
+  color: #6c757d;
+  font-size: 0.875rem;
+}
+
+/* Ajustes para o componente do mapa */
+.leaflet-container {
+  height: 100%;
+  width: 100%;
+  z-index: 1;
+}
+
+/* Estilo para badges */
+.collection-points-container .badge {
+  font-size: 0.7rem;
+  padding: 5px 10px;
+  font-weight: 600;
+}
+
+/* Botões de ação nos cards */
+.collection-points-container .point-item .btn {
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  border-radius: 4px;
+}
+
+.collection-points-container .point-details-card .btn {
+  font-weight: 600;
+  border-radius: 6px;
+  padding: 10px;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .collection-points-container {
+    top: 56px;
+  }
+
+  .collection-points-container .sidebar.open {
+    position: absolute;
+    width: 100%;
+    max-width: 340px;
+    height: 100%;
+    z-index: 1001;
+  }
+
+  .collection-points-container .point-details-card {
+    max-width: calc(100% - 40px);
+    left: 20px;
+    right: 20px;
+    padding: 20px;
+  }
+
+  .collection-points-container .stats-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+
+  .collection-points-container .stat-card {
+    padding: 10px;
+  }
+
+  .collection-points-container .stat-value {
+    font-size: 20px;
+  }
+
+  .collection-points-container .stat-label {
+    font-size: 9px;
+  }
+}
+
+@media (max-width: 576px) {
+  .collection-points-container .sidebar.open {
+    max-width: 300px;
+  }
+
+  .collection-points-container .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .collection-points-container .point-details-card {
+    top: auto;
+    bottom: 20px;
+    max-height: 50vh;
+    overflow-y: auto;
+  }
+}
+
+/* Animações suaves */
+.fade-in {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Melhorias nos formulários dentro da sidebar */
+.collection-points-container .sidebar .form-control,
+.collection-points-container .sidebar .form-select {
+  background: white;
+  border: 1px solid #ced4da;
+  font-size: 0.875rem;
+}
+
+.collection-points-container .sidebar .form-control:focus,
+.collection-points-container .sidebar .form-select:focus {
+  background: white;
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.collection-points-container .sidebar .input-group-text {
+  background: white;
+  border: 1px solid #ced4da;
+  color: #6c757d;
+}
+
+.collection-points-container .sidebar-header .form-label,
+.collection-points-container .sidebar-header label {
+  color: rgba(255, 255, 255, 0.95) !important;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.collection-points-container .sidebar-content .form-label,
+.collection-points-container .sidebar-content label {
+  color: #212529 !important;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+/* Progress bar customizada */
+.collection-points-container .progress {
+  height: 10px;
+  border-radius: 5px;
+  background-color: #e9ecef;
+}
+
+.collection-points-container .progress-bar {
+  border-radius: 5px;
+  transition: width 0.6s ease;
+}
+
+/* Botões na sidebar */
+.collection-points-container .sidebar .btn-light {
+  background: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  font-weight: 600;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.collection-points-container .sidebar .btn-light:hover {
+  background: #f8f9fa;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-color: white;
+}
+
+.collection-points-container .sidebar .btn-link {
+  color: white;
+  text-decoration: none;
+}
+
+.collection-points-container .sidebar .btn-link:hover {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Ajustes para lista de pontos */
+.collection-points-container .list-group-item {
+  transition: all 0.2s ease;
+}
+
+.collection-points-container .list-group-flush > .list-group-item {
+  border-width: 0 0 1px;
+}
+
+.collection-points-container .list-group-flush > .list-group-item:first-child {
+  border-top: 1px solid #e9ecef;
+}
+
+/* Scrollbar personalizada para navegadores Firefox */
+.collection-points-container .sidebar-content {
+  scrollbar-width: thin;
+  scrollbar-color: #adb5bd #e9ecef;
+}
+
+/* Hover effects e transições suaves */
+.collection-points-container .btn {
+  transition: all 0.2s ease;
+}
+
+.collection-points-container .btn:active {
+  transform: scale(0.98);
+}
+
+/* Customização do toast notification */
+.collection-points-container + div[role="status"] {
+  z-index: 9999;
+}

@@ -1,18 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Button, Badge, Tab, Tabs, Table, Spinner } from 'react-bootstrap';
+import { Button, Badge, Form, InputGroup, ListGroup, Spinner } from 'react-bootstrap';
 import MapComponent from '../components/MapComponent';
 import CollectionPointModal from '../components/CollectionPointModal';
 import { collectionPointsAPI } from '../services/api';
 import toast from 'react-hot-toast';
+import './CollectionPoints.css';
 
 const CollectionPoints = () => {
-  const [activeTab, setActiveTab] = useState('map');
   const [showModal, setShowModal] = useState(false);
   const [collectionPoints, setCollectionPoints] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedPoint, setSelectedPoint] = useState(null);
   const [editingPoint, setEditingPoint] = useState(null);
   const [saveLoading, setSaveLoading] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [filterType, setFilterType] = useState('all');
+  const [centerOnPoint, setCenterOnPoint] = useState(null);
 
   // Hook para carregar dados reais
   useEffect(() => {
@@ -123,14 +128,19 @@ const CollectionPoints = () => {
   };
 
   const handleViewOnMap = (point) => {
-    // Criar URL com coordenadas do ponto
+    // Centralizar o ponto no mapa Leaflet
     const lat = point.latitude_read || point.latitude || point.lat;
     const lng = point.longitude_read || point.longitude || point.lng;
     
     if (lat && lng) {
-      // Abrir Google Maps em nova aba
-      const mapsUrl = `https://www.google.com/maps?q=${lat},${lng}&z=18&t=h`;
-      window.open(mapsUrl, '_blank');
+      // Resetar primeiro para garantir que o useEffect seja acionado mesmo com o mesmo ponto
+      setCenterOnPoint(null);
+      // Usar setTimeout para garantir que o state foi resetado antes de setar o novo valor
+      setTimeout(() => {
+        setCenterOnPoint({ latitude: lat, longitude: lng, timestamp: Date.now() });
+        setSelectedPoint(point);
+      }, 10);
+      toast.success('Ponto centralizado no mapa!');
     } else {
       toast.error('Coordenadas não disponíveis para este ponto.');
     }
@@ -302,243 +312,331 @@ const CollectionPoints = () => {
     return labels[type] || type;
   };
 
+  // Filtrar pontos
+  const filteredPoints = collectionPoints.filter(point => {
+    const matchesSearch = point.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         point.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         point.neighborhood?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesStatus = filterStatus === 'all' || point.status === filterStatus;
+    const matchesType = filterType === 'all' || point.point_type === filterType || point.type === filterType;
+    
+    return matchesSearch && matchesStatus && matchesType;
+  });
+
+  // Estatísticas rápidas
+  const stats = {
+    total: collectionPoints.length,
+    active: collectionPoints.filter(p => p.status === 'active').length,
+    inactive: collectionPoints.filter(p => p.status === 'inactive').length,
+    maintenance: collectionPoints.filter(p => p.status === 'maintenance').length,
+    full: collectionPoints.filter(p => p.status === 'full').length,
+  };
+
   return (
-    <Container fluid>
-      <Row className="mb-4">
-        <Col>
-          <div className="d-flex justify-content-between align-items-center">
-            <div>
-              <h2>
-                <i className="fas fa-map-marker-alt me-2"></i>
-                Pontos de Coleta
-              </h2>
-              <p className="text-muted">Gerencie os pontos de coleta de resíduos</p>
-            </div>
-            <Button variant="primary" onClick={handleCreatePoint}>
-              <i className="fas fa-plus me-2"></i>
-              Novo Ponto
+    <div className="collection-points-container">
+      {/* Sidebar */}
+      <div className={`sidebar ${sidebarOpen ? 'open' : 'closed'}`}>
+        <div className="sidebar-header">
+          <div className="d-flex justify-content-between align-items-center mb-3">
+            <h5 className="mb-0">
+              <i className="fas fa-map-marker-alt me-2"></i>
+              Pontos de Coleta
+            </h5>
+            <Button 
+              variant="link" 
+              size="sm" 
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="text-white p-0"
+            >
+              <i className={`fas fa-chevron-${sidebarOpen ? 'left' : 'right'}`}></i>
             </Button>
           </div>
-        </Col>
-      </Row>
 
-      <Tabs activeKey={activeTab} onSelect={setActiveTab} className="mb-4">
-        <Tab eventKey="map" title={<><i className="fas fa-map me-2"></i>Mapa</>}>
-          <Card>
-            <Card.Body>
-              {loading ? (
-                <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '500px' }}>
-                  <div className="spinner-border text-primary" role="status">
-                    <span className="visually-hidden">Carregando...</span>
-                  </div>
+          {sidebarOpen && (
+            <>
+              {/* Botão Novo Ponto */}
+              <Button 
+                variant="light" 
+                className="w-100 mb-3"
+                onClick={handleCreatePoint}
+              >
+                <i className="fas fa-plus me-2"></i>
+                Novo Ponto
+              </Button>
+
+              {/* Estatísticas */}
+              <div className="stats-grid mb-3">
+                <div className="stat-card">
+                  <div className="stat-value">{stats.total}</div>
+                  <div className="stat-label">Total</div>
                 </div>
-              ) : (
-                <MapComponent
-                  center={[-23.5505, -46.6333]}
-                  zoom={12}
-                  points={collectionPoints.filter(point => 
-                    point.latitude && point.longitude && 
-                    !isNaN(point.latitude) && !isNaN(point.longitude)
-                  )}
-                  onPointClick={setSelectedPoint}
-                  style={{ height: '500px', width: '100%' }}
-                />
-              )}
-            </Card.Body>
-          </Card>
-        </Tab>
-
-        <Tab eventKey="list" title={<><i className="fas fa-list me-2"></i>Lista</>}>
-          <Row>
-            {collectionPoints.map((point) => (
-              <Col xs={12} lg={6} xl={4} key={point.id} className="mb-4">
-                <Card className="h-100">
-                  <Card.Header className="d-flex justify-content-between align-items-center">
-                    <div>
-                      {getTypeBadge(point.point_type || point.type)}
-                      {getStatusBadge(point.status)}
-                    </div>
-                  </Card.Header>
-                  <Card.Body>
-                    <h5 className="card-title">{point.name}</h5>
-                    
-                    <div className="mb-3">
-                      <small className="text-muted">
-                        <i className="fas fa-map-marker-alt me-1"></i>
-                        {point.address}
-                      </small>
-                    </div>
-
-                    <Row className="mb-3">
-                      <Col xs={6}>
-                        <small className="text-muted">Frequência</small>
-                        <div className="fw-bold">{getFrequencyLabel(point.frequency)}</div>
-                      </Col>
-                      <Col xs={6}>
-                        <small className="text-muted">Container</small>
-                        <div className="fw-bold">{getContainerTypeLabel(point.containerType)}</div>
-                      </Col>
-                    </Row>
-
-                    <Row className="mb-3">
-                      <Col xs={6}>
-                        <small className="text-muted">Última Coleta</small>
-                        <div className="fw-bold">{new Date(point.lastCollection).toLocaleDateString('pt-BR')}</div>
-                      </Col>
-                      <Col xs={6}>
-                        <small className="text-muted">Próxima Coleta</small>
-                        <div className="fw-bold">{new Date(point.nextCollection).toLocaleDateString('pt-BR')}</div>
-                      </Col>
-                    </Row>
-
-                    <div className="mb-3">
-                      <small className="text-muted">Capacidade</small>
-                      <div className="fw-bold">{point.containerCapacity}L</div>
-                    </div>
-
-                    {point.notes && (
-                      <div className="mb-3">
-                        <small className="text-muted">Observações</small>
-                        <div className="small">{point.notes}</div>
-                      </div>
-                    )}
-                  </Card.Body>
-                  <Card.Footer>
-                    <div className="d-flex gap-2 mb-2">
-                      <Button 
-                        variant="outline-primary" 
-                        size="sm" 
-                        className="flex-fill"
-                        onClick={() => handleEditPoint(point)}
-                      >
-                        <i className="fas fa-edit me-1"></i>
-                        Editar
-                      </Button>
-                      <Button 
-                        variant="outline-info" 
-                        size="sm" 
-                        className="flex-fill"
-                        onClick={() => handleViewOnMap(point)}
-                      >
-                        <i className="fas fa-map me-1"></i>
-                        Ver no Mapa
-                      </Button>
-                    </div>
-                    <div className="d-flex gap-2">
-                      <Button 
-                        variant={point.status === 'active' ? 'outline-success' : 'outline-warning'} 
-                        size="sm" 
-                        className="flex-fill"
-                        onClick={() => handleMarkAsCollected(point)}
-                        disabled={point.status !== 'active'}
-                      >
-                        <i className="fas fa-check me-1"></i>
-                        Coletado
-                      </Button>
-                      <Button 
-                        variant={point.status === 'active' ? 'outline-danger' : 'outline-success'} 
-                        size="sm" 
-                        className="flex-fill"
-                        onClick={() => handleToggleStatus(point)}
-                      >
-                        <i className={`fas fa-${point.status === 'active' ? 'pause' : 'play'} me-1`}></i>
-                        {point.status === 'active' ? 'Desativar' : 'Ativar'}
-                      </Button>
-                    </div>
-                  </Card.Footer>
-                </Card>
-              </Col>
-            ))}
-          </Row>
-        </Tab>
-
-        <Tab eventKey="schedule" title={<><i className="fas fa-calendar me-2"></i>Cronograma</>}>
-          <Card>
-            <Card.Header>
-              <h5 className="mb-0">Cronograma de Coletas</h5>
-            </Card.Header>
-            <Card.Body>
-              <div className="table-responsive">
-                <table className="table table-hover">
-                  <thead>
-                    <tr>
-                      <th>Ponto</th>
-                      <th>Tipo</th>
-                      <th>Frequência</th>
-                      <th>Última Coleta</th>
-                      <th>Próxima Coleta</th>
-                      <th>Status</th>
-                      <th>Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {collectionPoints.map((point) => (
-                      <tr key={point.id}>
-                        <td>
-                          <div className="fw-bold">{point.name}</div>
-                          <small className="text-muted">{point.neighborhood}</small>
-                        </td>
-                        <td>{getTypeBadge(point.point_type || point.type)}</td>
-                        <td>{getFrequencyLabel(point.collection_frequency || point.frequency)}</td>
-                        <td>
-                          {point.last_collection ? 
-                            new Date(point.last_collection).toLocaleDateString('pt-BR') : 
-                            'Nunca'
-                          }
-                        </td>
-                        <td>
-                          {point.next_collection ? 
-                            new Date(point.next_collection).toLocaleDateString('pt-BR') : 
-                            'N/A'
-                          }
-                        </td>
-                        <td>{getStatusBadge(point.status)}</td>
-                        <td>
-                          <div className="d-flex gap-1">
-                            <Button 
-                              variant="outline-primary" 
-                              size="sm"
-                              onClick={() => handleEditPoint(point)}
-                              title="Editar ponto"
-                            >
-                              <i className="fas fa-edit"></i>
-                            </Button>
-                            <Button 
-                              variant="outline-info" 
-                              size="sm"
-                              onClick={() => handleViewOnMap(point)}
-                              title="Ver no mapa"
-                            >
-                              <i className="fas fa-map"></i>
-                            </Button>
-                            <Button 
-                              variant={point.status === 'active' ? 'outline-success' : 'outline-warning'} 
-                              size="sm"
-                              onClick={() => handleMarkAsCollected(point)}
-                              disabled={point.status !== 'active'}
-                              title="Registrar coleta"
-                            >
-                              <i className="fas fa-check"></i>
-                            </Button>
-                            <Button 
-                              variant={point.status === 'active' ? 'outline-danger' : 'outline-success'} 
-                              size="sm"
-                              onClick={() => handleToggleStatus(point)}
-                              title={point.status === 'active' ? 'Desativar' : 'Ativar'}
-                            >
-                              <i className={`fas fa-${point.status === 'active' ? 'pause' : 'play'}`}></i>
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <div className="stat-card">
+                  <div className="stat-value text-success">{stats.active}</div>
+                  <div className="stat-label">Ativos</div>
+                </div>
+                <div className="stat-card">
+                  <div className="stat-value text-warning">{stats.maintenance}</div>
+                  <div className="stat-label">Manutenção</div>
+                </div>
+                <div className="stat-card">
+                  <div className="stat-value text-danger">{stats.full}</div>
+                  <div className="stat-label">Cheios</div>
+                </div>
               </div>
-            </Card.Body>
-          </Card>
-        </Tab>
-      </Tabs>
+
+              {/* Busca */}
+              <InputGroup className="mb-3">
+                <InputGroup.Text>
+                  <i className="fas fa-search"></i>
+                </InputGroup.Text>
+                <Form.Control
+                  type="text"
+                  placeholder="Buscar pontos..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </InputGroup>
+
+              {/* Filtros */}
+              <div className="mb-3">
+                <Form.Label className="small">Status</Form.Label>
+                <Form.Select 
+                  size="sm" 
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                >
+                  <option value="all">Todos</option>
+                  <option value="active">Ativo</option>
+                  <option value="inactive">Inativo</option>
+                  <option value="maintenance">Manutenção</option>
+                  <option value="full">Cheio</option>
+                </Form.Select>
+              </div>
+
+              <div className="mb-3">
+                <Form.Label className="small">Tipo</Form.Label>
+                <Form.Select 
+                  size="sm"
+                  value={filterType}
+                  onChange={(e) => setFilterType(e.target.value)}
+                >
+                  <option value="all">Todos</option>
+                  <option value="container">Contêiner</option>
+                  <option value="bin">Lixeira</option>
+                  <option value="residential">Residencial</option>
+                  <option value="commercial">Comercial</option>
+                </Form.Select>
+              </div>
+
+              <hr className="border-light" />
+            </>
+          )}
+        </div>
+
+        {sidebarOpen && (
+          <div className="sidebar-content">
+            {loading ? (
+              <div className="text-center py-5">
+                <Spinner animation="border" variant="primary" />
+                <div className="mt-2 text-muted">Carregando...</div>
+              </div>
+            ) : (
+              <ListGroup variant="flush">
+                {filteredPoints.map((point) => (
+                  <ListGroup.Item
+                    key={point.id}
+                    action
+                    active={selectedPoint?.id === point.id}
+                    onClick={() => setSelectedPoint(point)}
+                    className="point-item"
+                  >
+                    <div className="d-flex justify-content-between align-items-start mb-2">
+                      <div className="flex-grow-1">
+                        <div className="fw-bold">{point.name}</div>
+                        <div className="small text-muted">{point.code || `#${point.id}`}</div>
+                      </div>
+                      <div>
+                        {getTypeBadge(point.point_type || point.type)}
+                      </div>
+                    </div>
+
+                    <div className="small mb-2">
+                      <i className="fas fa-map-marker-alt me-1"></i>
+                      {point.address}
+                    </div>
+
+                    <div className="d-flex justify-content-between align-items-center">
+                      {getStatusBadge(point.status)}
+                      {point.current_fill_level != null && (
+                        <div className="small">
+                          Nível: <strong>{point.current_fill_level}%</strong>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="mt-2 d-flex gap-1">
+                      <Button
+                        variant="outline-info"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleViewOnMap(point);
+                        }}
+                        title="Ver no mapa"
+                      >
+                        <i className="fas fa-map-marked-alt"></i>
+                      </Button>
+                      <Button
+                        variant="outline-primary"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditPoint(point);
+                        }}
+                        title="Editar"
+                      >
+                        <i className="fas fa-edit"></i>
+                      </Button>
+                      <Button
+                        variant="outline-success"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleMarkAsCollected(point);
+                        }}
+                        disabled={point.status !== 'active'}
+                        title="Registrar coleta"
+                      >
+                        <i className="fas fa-check"></i>
+                      </Button>
+                      <Button
+                        variant={point.status === 'active' ? 'outline-danger' : 'outline-warning'}
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleToggleStatus(point);
+                        }}
+                        title={point.status === 'active' ? 'Desativar' : 'Ativar'}
+                      >
+                        <i className={`fas fa-${point.status === 'active' ? 'pause' : 'play'}`}></i>
+                      </Button>
+                    </div>
+                  </ListGroup.Item>
+                ))}
+              </ListGroup>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Toggle button quando sidebar está fechada */}
+      {!sidebarOpen && (
+        <Button
+          variant="primary"
+          className="sidebar-toggle"
+          onClick={() => setSidebarOpen(true)}
+        >
+          <i className="fas fa-chevron-right"></i>
+        </Button>
+      )}
+
+      {/* Mapa em tela cheia */}
+      <div className="map-fullscreen">
+        {loading ? (
+          <div className="d-flex justify-content-center align-items-center h-100">
+            <Spinner animation="border" variant="primary" />
+          </div>
+        ) : (
+          <MapComponent
+            center={[-23.5505, -46.6333]}
+            zoom={12}
+            points={filteredPoints.filter(point => 
+              point.latitude && point.longitude && 
+              !isNaN(point.latitude) && !isNaN(point.longitude)
+            )}
+            onPointClick={setSelectedPoint}
+            centerOnPoint={centerOnPoint}
+            style={{ height: '100%', width: '100%' }}
+          />
+        )}
+
+        {/* Detalhes do ponto selecionado */}
+        {selectedPoint && (
+          <div className="point-details-card">
+            <div className="d-flex justify-content-between align-items-start mb-3">
+              <h5 className="mb-0">{selectedPoint.name}</h5>
+              <Button
+                variant="link"
+                size="sm"
+                className="text-secondary p-0"
+                onClick={() => setSelectedPoint(null)}
+              >
+                <i className="fas fa-times"></i>
+              </Button>
+            </div>
+
+            <div className="mb-2">
+              {getTypeBadge(selectedPoint.point_type || selectedPoint.type)}
+              {getStatusBadge(selectedPoint.status)}
+            </div>
+
+            <div className="mb-2">
+              <small className="text-muted">
+                <i className="fas fa-map-marker-alt me-1"></i>
+                {selectedPoint.address}
+              </small>
+            </div>
+
+            {selectedPoint.neighborhood && (
+              <div className="mb-2">
+                <small className="text-muted">
+                  <i className="fas fa-building me-1"></i>
+                  {selectedPoint.neighborhood}
+                </small>
+              </div>
+            )}
+
+            {selectedPoint.current_fill_level != null && (
+              <div className="mb-3">
+                <div className="d-flex justify-content-between mb-1">
+                  <small>Nível de Preenchimento</small>
+                  <small className="fw-bold">{selectedPoint.current_fill_level}%</small>
+                </div>
+                <div className="progress">
+                  <div
+                    className={`progress-bar ${
+                      selectedPoint.current_fill_level > 80 ? 'bg-danger' :
+                      selectedPoint.current_fill_level > 60 ? 'bg-warning' : 'bg-success'
+                    }`}
+                    style={{ width: `${selectedPoint.current_fill_level}%` }}
+                  ></div>
+                </div>
+              </div>
+            )}
+
+            <div className="d-grid gap-2">
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => handleEditPoint(selectedPoint)}
+              >
+                <i className="fas fa-edit me-2"></i>
+                Editar Ponto
+              </Button>
+              <Button
+                variant="success"
+                size="sm"
+                onClick={() => handleMarkAsCollected(selectedPoint)}
+                disabled={selectedPoint.status !== 'active'}
+              >
+                <i className="fas fa-check me-2"></i>
+                Registrar Coleta
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Modal para adicionar/editar ponto */}
       <CollectionPointModal
@@ -548,7 +646,7 @@ const CollectionPoints = () => {
         editPoint={editingPoint}
         loading={saveLoading}
       />
-    </Container>
+    </div>
   );
 };
 
