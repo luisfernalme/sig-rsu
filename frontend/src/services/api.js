@@ -175,6 +175,7 @@ export const collectionPointsAPI = {
   },
 
   createCollectionPoint: async (pointData) => {
+    console.log('Frontend sending pointData:', JSON.stringify(pointData, null, 2));
     const response = await api.post('/collection-points/', pointData);
     return response.data;
   },

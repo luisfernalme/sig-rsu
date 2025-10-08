@@ -34,6 +34,32 @@ class CollectionPointViewSet(viewsets.ModelViewSet):
             return CollectionPointDetailSerializer
         return CollectionPointSerializer
     
+    def create(self, request, *args, **kwargs):
+        """
+        Override create to add detailed logging
+        """
+        print("=== FRONTEND REQUEST DEBUG ===")
+        print(f"Request method: {request.method}")
+        print(f"Request data: {request.data}")
+        print(f"Request headers: {dict(request.headers)}")
+        print(f"User: {request.user}")
+        print(f"User authenticated: {request.user.is_authenticated}")
+        
+        serializer = self.get_serializer(data=request.data)
+        if not serializer.is_valid():
+            print("=== VALIDATION ERRORS ===")
+            print(f"Errors: {serializer.errors}")
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            self.perform_create(serializer)
+            print(f"=== SUCCESS: Created point ===")
+            headers = self.get_success_headers(serializer.data)
+            return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        except Exception as e:
+            print(f"=== CREATE ERROR: {e} ===")
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    
     def perform_create(self, serializer):
         """
         Definir usuário criador

@@ -96,7 +96,12 @@ const CollectionPoints = () => {
       setEditingPoint(null);
     } catch (error) {
       console.error('Erro ao salvar ponto:', error);
-      toast.error('Erro ao salvar ponto de coleta. Tente novamente.');
+      console.error('Response data:', error.response?.data);
+      console.error('Response status:', error.response?.status);
+      const errorMessage = error.response?.data?.detail || 
+                          error.response?.data?.message || 
+                          'Erro ao salvar ponto de coleta. Tente novamente.';
+      toast.error(errorMessage);
     } finally {
       setSaveLoading(false);
     }

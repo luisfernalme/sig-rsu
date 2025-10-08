@@ -45,7 +45,15 @@ class CollectionPointSerializer(serializers.ModelSerializer):
             'last_collection', 'next_collection', 'days_since_collection', 
             'created_by', 'created_by_name', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'created_at', 'updated_at', 'created_by']
+        extra_kwargs = {
+            'address': {'required': False, 'allow_blank': True},
+            'neighborhood': {'required': False, 'allow_blank': True},
+            'capacity_volume': {'required': False},
+            'capacity_weight': {'required': False},
+            'collection_frequency': {'required': False},
+            'location': {'required': False}
+        }
     
     def get_fill_level_percentage(self, obj):
         """
@@ -117,6 +125,30 @@ class CollectionPointSerializer(serializers.ModelSerializer):
         # Se latitude e longitude foram fornecidas, criar Point
         if latitude is not None and longitude is not None:
             validated_data['location'] = Point(float(longitude), float(latitude))
+        else:
+            # Localização padrão se não informada
+            validated_data['location'] = Point(-49.273251, -25.426954)  # Curitiba
+        
+        # Fornecer valores padrão para campos obrigatórios se não informados
+        if 'capacity_volume' not in validated_data or validated_data['capacity_volume'] is None:
+            validated_data['capacity_volume'] = 1.0
+        
+        if 'capacity_weight' not in validated_data or validated_data['capacity_weight'] is None:
+            validated_data['capacity_weight'] = 100.0
+            
+        if 'address' not in validated_data or not validated_data['address']:
+            validated_data['address'] = 'Endereço não informado'
+            
+        if 'neighborhood' not in validated_data or not validated_data['neighborhood']:
+            validated_data['neighborhood'] = 'Bairro não informado'
+            
+        if 'collection_frequency' not in validated_data:
+            validated_data['collection_frequency'] = 'daily'
+        
+        # Definir o usuário que criou o ponto
+        request = self.context.get('request')
+        if request and hasattr(request, 'user'):
+            validated_data['created_by'] = request.user
         
         return super().create(validated_data)
     
@@ -140,10 +172,24 @@ class CollectionPointSerializer(serializers.ModelSerializer):
         """
         Converter dados de entrada incluindo latitude e longitude
         """
-        # Permitir latitude e longitude como campos de entrada
-        if 'latitude' in data and 'longitude' in data:
-            # Manter os campos para processamento no create/update
-            pass
+        # Fazer uma cópia dos dados para não modificar o original
+        data = data.copy()
+        
+        # Converter strings vazias para valores padrão para campos numéricos obrigatórios
+        for field in ['capacity_volume', 'capacity_weight']:
+            if field in data and (data[field] == '' or data[field] is None):
+                if field == 'capacity_volume':
+                    data[field] = 1.0  # Volume padrão: 1m³
+                elif field == 'capacity_weight':
+                    data[field] = 100.0  # Peso padrão: 100kg
+        
+        # Converter strings vazias para valores padrão para campos de texto obrigatórios
+        for field in ['address', 'neighborhood']:
+            if field in data and (data[field] == '' or data[field] is None):
+                if field == 'address':
+                    data[field] = 'Endereço não informado'
+                elif field == 'neighborhood':
+                    data[field] = 'Bairro não informado'
         
         return super().to_internal_value(data)
 
