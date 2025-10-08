@@ -122,6 +122,68 @@ const CollectionPoints = () => {
     }
   };
 
+  const handleViewOnMap = (point) => {
+    // Criar URL com coordenadas do ponto
+    const lat = point.latitude_read || point.latitude || point.lat;
+    const lng = point.longitude_read || point.longitude || point.lng;
+    
+    if (lat && lng) {
+      // Abrir Google Maps em nova aba
+      const mapsUrl = `https://www.google.com/maps?q=${lat},${lng}&z=18&t=h`;
+      window.open(mapsUrl, '_blank');
+    } else {
+      toast.error('Coordenadas não disponíveis para este ponto.');
+    }
+  };
+
+  const handleToggleStatus = async (point) => {
+    const newStatus = point.status === 'active' ? 'inactive' : 'active';
+    
+    try {
+      const updatedData = {
+        ...point,
+        status: newStatus
+      };
+      
+      await collectionPointsAPI.updateCollectionPoint(point.id, updatedData);
+      
+      // Atualizar na lista local
+      setCollectionPoints(prev => prev.map(p => 
+        p.id === point.id ? { ...p, status: newStatus } : p
+      ));
+      
+      const statusLabel = newStatus === 'active' ? 'ativado' : 'desativado';
+      toast.success(`Ponto ${statusLabel} com sucesso!`);
+    } catch (error) {
+      console.error('Erro ao alterar status:', error);
+      toast.error('Erro ao alterar status do ponto.');
+    }
+  };
+
+  const handleMarkAsCollected = async (point) => {
+    try {
+      // Registrar coleta
+      const collectionData = {
+        collection_point: point.id,
+        collection_date: new Date().toISOString(),
+        status: 'completed',
+        fill_level_before: point.current_fill_level || 0,
+        fill_level_after: 0,
+        notes: 'Coleta registrada via interface web'
+      };
+      
+      await collectionPointsAPI.recordCollection(point.id, collectionData);
+      toast.success('Coleta registrada com sucesso!');
+      
+      // Atualizar lista
+      const response = await collectionPointsAPI.getCollectionPoints();
+      setCollectionPoints(response.results || response);
+    } catch (error) {
+      console.error('Erro ao registrar coleta:', error);
+      toast.error('Erro ao registrar coleta.');
+    }
+  };
+
   // Dados simulados para fallback
   const simulatedPoints = [
     {
@@ -198,32 +260,34 @@ const CollectionPoints = () => {
 
   const getTypeBadge = (type) => {
     const variants = {
-      residencial: 'primary',
-      comercial: 'info',
-      industrial: 'warning',
-      especial: 'danger',
+      container: 'primary',
+      bin: 'info',
+      dumpster: 'warning',
+      residential: 'success',
+      commercial: 'danger',
     };
 
     const labels = {
-      residencial: 'Residencial',
-      comercial: 'Comercial',
-      industrial: 'Industrial',
-      especial: 'Especial',
+      container: 'Contêiner',
+      bin: 'Lixeira',
+      dumpster: 'Caçamba',
+      residential: 'Residencial',
+      commercial: 'Comercial',
     };
 
     return (
-      <Badge bg={variants[type]} className="me-2">
-        {labels[type]}
+      <Badge bg={variants[type] || 'secondary'} className="me-2">
+        {labels[type] || type}
       </Badge>
     );
   };
 
   const getFrequencyLabel = (frequency) => {
     const labels = {
-      diaria: 'Diária',
-      bi_diaria: 'Bi-diária',
-      alternada: 'Alternada',
-      semanal: 'Semanal',
+      daily: 'Diária',
+      weekly: 'Semanal',
+      biweekly: 'Quinzenal',
+      monthly: 'Mensal',
     };
     return labels[frequency] || frequency;
   };
@@ -291,7 +355,7 @@ const CollectionPoints = () => {
                 <Card className="h-100">
                   <Card.Header className="d-flex justify-content-between align-items-center">
                     <div>
-                      {getTypeBadge(point.type)}
+                      {getTypeBadge(point.point_type || point.type)}
                       {getStatusBadge(point.status)}
                     </div>
                   </Card.Header>
@@ -339,19 +403,48 @@ const CollectionPoints = () => {
                       </div>
                     )}
                   </Card.Body>
-                  <Card.Footer className="d-flex gap-2">
-                    <Button variant="outline-primary" size="sm" className="flex-fill">
-                      <i className="fas fa-edit me-1"></i>
-                      Editar
-                    </Button>
-                    <Button variant="outline-info" size="sm" className="flex-fill">
-                      <i className="fas fa-map me-1"></i>
-                      Ver no Mapa
-                    </Button>
-                    <Button variant="outline-success" size="sm" className="flex-fill">
-                      <i className="fas fa-check me-1"></i>
-                      Coletado
-                    </Button>
+                  <Card.Footer>
+                    <div className="d-flex gap-2 mb-2">
+                      <Button 
+                        variant="outline-primary" 
+                        size="sm" 
+                        className="flex-fill"
+                        onClick={() => handleEditPoint(point)}
+                      >
+                        <i className="fas fa-edit me-1"></i>
+                        Editar
+                      </Button>
+                      <Button 
+                        variant="outline-info" 
+                        size="sm" 
+                        className="flex-fill"
+                        onClick={() => handleViewOnMap(point)}
+                      >
+                        <i className="fas fa-map me-1"></i>
+                        Ver no Mapa
+                      </Button>
+                    </div>
+                    <div className="d-flex gap-2">
+                      <Button 
+                        variant={point.status === 'active' ? 'outline-success' : 'outline-warning'} 
+                        size="sm" 
+                        className="flex-fill"
+                        onClick={() => handleMarkAsCollected(point)}
+                        disabled={point.status !== 'active'}
+                      >
+                        <i className="fas fa-check me-1"></i>
+                        Coletado
+                      </Button>
+                      <Button 
+                        variant={point.status === 'active' ? 'outline-danger' : 'outline-success'} 
+                        size="sm" 
+                        className="flex-fill"
+                        onClick={() => handleToggleStatus(point)}
+                      >
+                        <i className={`fas fa-${point.status === 'active' ? 'pause' : 'play'} me-1`}></i>
+                        {point.status === 'active' ? 'Desativar' : 'Ativar'}
+                      </Button>
+                    </div>
                   </Card.Footer>
                 </Card>
               </Col>
@@ -385,21 +478,55 @@ const CollectionPoints = () => {
                           <div className="fw-bold">{point.name}</div>
                           <small className="text-muted">{point.neighborhood}</small>
                         </td>
-                        <td>{getTypeBadge(point.type)}</td>
-                        <td>{getFrequencyLabel(point.frequency)}</td>
-                        <td>{new Date(point.lastCollection).toLocaleDateString('pt-BR')}</td>
-                        <td>{new Date(point.nextCollection).toLocaleDateString('pt-BR')}</td>
+                        <td>{getTypeBadge(point.point_type || point.type)}</td>
+                        <td>{getFrequencyLabel(point.collection_frequency || point.frequency)}</td>
+                        <td>
+                          {point.last_collection ? 
+                            new Date(point.last_collection).toLocaleDateString('pt-BR') : 
+                            'Nunca'
+                          }
+                        </td>
+                        <td>
+                          {point.next_collection ? 
+                            new Date(point.next_collection).toLocaleDateString('pt-BR') : 
+                            'N/A'
+                          }
+                        </td>
                         <td>{getStatusBadge(point.status)}</td>
                         <td>
                           <div className="d-flex gap-1">
-                            <Button variant="outline-primary" size="sm">
+                            <Button 
+                              variant="outline-primary" 
+                              size="sm"
+                              onClick={() => handleEditPoint(point)}
+                              title="Editar ponto"
+                            >
                               <i className="fas fa-edit"></i>
                             </Button>
-                            <Button variant="outline-info" size="sm">
+                            <Button 
+                              variant="outline-info" 
+                              size="sm"
+                              onClick={() => handleViewOnMap(point)}
+                              title="Ver no mapa"
+                            >
                               <i className="fas fa-map"></i>
                             </Button>
-                            <Button variant="outline-success" size="sm">
+                            <Button 
+                              variant={point.status === 'active' ? 'outline-success' : 'outline-warning'} 
+                              size="sm"
+                              onClick={() => handleMarkAsCollected(point)}
+                              disabled={point.status !== 'active'}
+                              title="Registrar coleta"
+                            >
                               <i className="fas fa-check"></i>
+                            </Button>
+                            <Button 
+                              variant={point.status === 'active' ? 'outline-danger' : 'outline-success'} 
+                              size="sm"
+                              onClick={() => handleToggleStatus(point)}
+                              title={point.status === 'active' ? 'Desativar' : 'Ativar'}
+                            >
+                              <i className={`fas fa-${point.status === 'active' ? 'pause' : 'play'}`}></i>
                             </Button>
                           </div>
                         </td>
