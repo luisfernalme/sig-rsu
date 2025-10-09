@@ -109,11 +109,18 @@ O sistema é composto por 6 containers:
 - Controle de acesso baseado em roles
 - JWT tokens para API
 
-### 🗺️ Gestão de Rotas
-- Criação e edição de rotas de coleta
-- Otimização automática de rotas
-- Visualização em mapa interativo
-- Geolocalização com PostGIS
+### 🗺️ Gestão de Rotas ✨ **RECÉM IMPLEMENTADO**
+- ✅ Criação e edição de rotas com interface visual
+- ✅ Desenho interativo de rotas no mapa (Leaflet)
+- ✅ Seleção de pontos de coleta por rota
+- ✅ Otimização automática de rotas
+- ✅ Visualização completa no mapa com marcadores
+- ✅ Validação em tempo real
+- ✅ Notificações toast para feedback
+- ✅ Layout responsivo e intuitivo
+- ✅ Integração completa com API REST
+- 📄 **Documentação:** [ROTAS_IMPLEMENTACAO.md](docs/ROTAS_IMPLEMENTACAO.md)
+- 🧪 **Guia de Testes:** [TESTE_ROTAS.md](docs/TESTE_ROTAS.md)
 
 ### 🚛 Gestão de Veículos
 - Cadastro de frota

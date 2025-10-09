@@ -1,0 +1,270 @@
+/* Estilos para a página de Rotas */
+
+.route-card {
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.route-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.status-badge {
+  font-size: 0.75rem;
+  padding: 0.35em 0.65em;
+}
+
+/* Mapa */
+.leaflet-container {
+  font-family: inherit;
+}
+
+.custom-div-icon {
+  background: transparent;
+  border: none;
+}
+
+/* Modal de Rota */
+.route-modal .map-container {
+  position: relative;
+}
+
+.route-modal .leaflet-container {
+  cursor: crosshair;
+}
+
+/* Pontos de coleta lista */
+.collection-points-list {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.collection-points-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.collection-points-list::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.collection-points-list::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.collection-points-list::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Animações */
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.optimizing-button {
+  animation: pulse 1.5s infinite;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .route-card .card-footer {
+    flex-direction: column;
+  }
+  
+  .route-card .card-footer .btn {
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+  
+  .route-card .card-footer .btn:last-child {
+    margin-bottom: 0;
+  }
+}
+
+/* Empty state */
+.empty-state {
+  padding: 3rem 1rem;
+}
+
+.empty-state i {
+  opacity: 0.5;
+}
+
+/* Loading state */
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+/* Legenda do mapa */
+.map-legend {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  padding: 0.75rem;
+  background: #f8f9fa;
+  border-radius: 0.25rem;
+  margin-top: 1rem;
+}
+
+.map-legend-item {
+  display: flex;
+  align-items: center;
+  font-size: 0.875rem;
+}
+
+.map-legend-color {
+  width: 20px;
+  height: 20px;
+  margin-right: 0.5rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.map-legend-line {
+  width: 20px;
+  height: 4px;
+  margin-right: 0.5rem;
+  flex-shrink: 0;
+}
+
+/* Tooltips personalizados */
+.leaflet-tooltip {
+  font-family: inherit;
+  font-size: 0.875rem;
+}
+
+/* Popups personalizados */
+.leaflet-popup-content {
+  font-family: inherit;
+  margin: 0.75rem;
+}
+
+.leaflet-popup-content strong {
+  color: #0d6efd;
+}
+
+/* Form enhancements */
+.form-control:focus,
+.form-select:focus {
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+/* Card header icons */
+.card-header i {
+  font-size: 1.1rem;
+}
+
+/* Button groups in card footer */
+.card-footer .btn-group {
+  width: 100%;
+}
+
+.card-footer .btn {
+  border-radius: 0.25rem !important;
+}
+
+/* Map controls */
+.map-controls {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1000;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.map-controls .btn {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Route info panel */
+.route-info-panel {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-left: 4px solid #0d6efd;
+  padding: 1rem;
+  border-radius: 0.25rem;
+  margin-bottom: 1rem;
+}
+
+.route-info-panel .info-item {
+  margin-bottom: 0.5rem;
+}
+
+.route-info-panel .info-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #6c757d;
+  font-weight: 600;
+}
+
+.route-info-panel .info-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #212529;
+}
+
+/* Statistics cards */
+.stat-card {
+  border-left: 4px solid;
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateX(5px);
+}
+
+.stat-card.stat-primary {
+  border-left-color: #0d6efd;
+}
+
+.stat-card.stat-success {
+  border-left-color: #198754;
+}
+
+.stat-card.stat-warning {
+  border-left-color: #ffc107;
+}
+
+.stat-card.stat-danger {
+  border-left-color: #dc3545;
+}
+
+/* Drag and drop zones */
+.drop-zone {
+  border: 2px dashed #dee2e6;
+  border-radius: 0.25rem;
+  padding: 1rem;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.drop-zone:hover {
+  border-color: #0d6efd;
+  background-color: #f8f9fa;
+}
+
+.drop-zone.active {
+  border-color: #0d6efd;
+  background-color: #e7f1ff;
+}

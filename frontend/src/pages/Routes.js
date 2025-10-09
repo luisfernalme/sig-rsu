@@ -1,40 +1,123 @@
-import React from 'react';
-import { Container, Row, Col, Card, Button, Badge } from 'react-bootstrap';
+import React, { useState, useEffect } from 'react';
+import { Container, Row, Col, Card, Button, Badge, Spinner, Alert } from 'react-bootstrap';
+import { routesAPI, collectionPointsAPI } from '../services/api';
+import RouteModal from '../components/RouteModal';
+import RouteMapView from '../components/RouteMapView';
+import toast from 'react-hot-toast';
+import './Routes.css';
 
 const Routes = () => {
-  // Dados simulados para as rotas
-  const routes = [
-    {
-      id: 1,
-      name: 'Rota Centro',
-      description: 'Coleta no centro da cidade',
-      frequency: 'Diária',
-      status: 'active',
-      estimatedDuration: '3h 30min',
-      estimatedDistance: '25.4 km',
-      collectionPoints: 45,
-    },
-    {
-      id: 2,
-      name: 'Rota Bairro Norte',
-      description: 'Coleta nos bairros da região norte',
-      frequency: 'Semanal',
-      status: 'active',
-      estimatedDuration: '2h 15min',
-      estimatedDistance: '18.7 km',
-      collectionPoints: 32,
-    },
-    {
-      id: 3,
-      name: 'Rota Industrial',
-      description: 'Coleta na zona industrial',
-      frequency: 'Quinzenal',
-      status: 'maintenance',
-      estimatedDuration: '4h 00min',
-      estimatedDistance: '31.2 km',
-      collectionPoints: 12,
-    },
-  ];
+  const [routes, setRoutes] = useState([]);
+  const [collectionPoints, setCollectionPoints] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
+  // Modais
+  const [showRouteModal, setShowRouteModal] = useState(false);
+  const [showMapModal, setShowMapModal] = useState(false);
+  const [selectedRoute, setSelectedRoute] = useState(null);
+  
+  // Estado de otimização
+  const [optimizing, setOptimizing] = useState(null);
+
+  useEffect(() => {
+    fetchRoutes();
+    fetchCollectionPoints();
+  }, []);
+
+  const fetchRoutes = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await routesAPI.getRoutes();
+      setRoutes(Array.isArray(data) ? data : data.results || []);
+    } catch (err) {
+      console.error('Erro ao buscar rotas:', err);
+      setError('Erro ao carregar rotas. Tente novamente.');
+      toast.error('Erro ao carregar rotas');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchCollectionPoints = async () => {
+    try {
+      const data = await collectionPointsAPI.getCollectionPoints();
+      setCollectionPoints(Array.isArray(data) ? data : data.results || []);
+    } catch (err) {
+      console.error('Erro ao buscar pontos de coleta:', err);
+    }
+  };
+
+  const handleCreateRoute = () => {
+    setSelectedRoute(null);
+    setShowRouteModal(true);
+  };
+
+  const handleEditRoute = (route) => {
+    setSelectedRoute(route);
+    setShowRouteModal(true);
+  };
+
+  const handleViewMap = (route) => {
+    setSelectedRoute(route);
+    setShowMapModal(true);
+  };
+
+  const handleOptimizeRoute = async (routeId) => {
+    try {
+      setOptimizing(routeId);
+      const result = await routesAPI.optimizeRoute(routeId);
+      
+      toast.success(
+        `Rota otimizada! Economia de ${result.savings_km} km (${result.savings_percent}%)`,
+        { duration: 5000 }
+      );
+      
+      // Atualizar lista de rotas
+      await fetchRoutes();
+    } catch (err) {
+      console.error('Erro ao otimizar rota:', err);
+      toast.error('Erro ao otimizar rota');
+    } finally {
+      setOptimizing(null);
+    }
+  };
+
+  const handleSaveRoute = async (routeData) => {
+    try {
+      if (selectedRoute) {
+        // Atualizar rota existente
+        await routesAPI.updateRoute(selectedRoute.id, routeData);
+        toast.success('Rota atualizada com sucesso!');
+      } else {
+        // Criar nova rota
+        await routesAPI.createRoute(routeData);
+        toast.success('Rota criada com sucesso!');
+      }
+      
+      // Recarregar lista de rotas
+      await fetchRoutes();
+      setShowRouteModal(false);
+    } catch (err) {
+      console.error('Erro ao salvar rota:', err);
+      toast.error(err.response?.data?.message || 'Erro ao salvar rota');
+      throw err; // Para que o modal possa tratar o erro
+    }
+  };
+
+  const handleDeleteRoute = async (routeId) => {
+    if (window.confirm('Tem certeza que deseja excluir esta rota?')) {
+      try {
+        await routesAPI.deleteRoute(routeId);
+        toast.success('Rota excluída com sucesso!');
+        await fetchRoutes();
+      } catch (err) {
+        console.error('Erro ao excluir rota:', err);
+        toast.error('Erro ao excluir rota');
+      }
+    }
+  };
 
   const getStatusBadge = (status) => {
     const variants = {
@@ -56,6 +139,27 @@ const Routes = () => {
     );
   };
 
+  const getFrequencyLabel = (frequency) => {
+    const labels = {
+      daily: 'Diária',
+      weekly: 'Semanal',
+      biweekly: 'Quinzenal',
+      monthly: 'Mensal',
+    };
+    return labels[frequency] || frequency;
+  };
+
+  if (loading) {
+    return (
+      <Container fluid>
+        <div className="text-center py-5">
+          <Spinner animation="border" variant="primary" />
+          <p className="mt-3">Carregando rotas...</p>
+        </div>
+      </Container>
+    );
+  }
+
   return (
     <Container fluid>
       <Row className="mb-4">
@@ -68,7 +172,7 @@ const Routes = () => {
               </h2>
               <p className="text-muted">Gerencie as rotas de coleta de resíduos</p>
             </div>
-            <Button variant="primary">
+            <Button variant="primary" onClick={handleCreateRoute}>
               <i className="fas fa-plus me-2"></i>
               Nova Rota
             </Button>
@@ -76,80 +180,133 @@ const Routes = () => {
         </Col>
       </Row>
 
-      <Row>
-        {routes.map((route) => (
-          <Col xs={12} lg={6} xl={4} key={route.id} className="mb-4">
-            <Card className="h-100">
-              <Card.Header className="d-flex justify-content-between align-items-center">
-                <h5 className="mb-0">{route.name}</h5>
-                {getStatusBadge(route.status)}
-              </Card.Header>
-              <Card.Body>
-                <p className="text-muted">{route.description}</p>
-                
-                <Row className="mb-3">
-                  <Col xs={6}>
-                    <small className="text-muted">Frequência</small>
-                    <div className="fw-bold">{route.frequency}</div>
-                  </Col>
-                  <Col xs={6}>
-                    <small className="text-muted">Pontos</small>
-                    <div className="fw-bold">{route.collectionPoints}</div>
-                  </Col>
-                </Row>
+      {error && (
+        <Row className="mb-3">
+          <Col>
+            <Alert variant="danger" dismissible onClose={() => setError(null)}>
+              {error}
+            </Alert>
+          </Col>
+        </Row>
+      )}
 
-                <Row className="mb-3">
-                  <Col xs={6}>
-                    <small className="text-muted">Duração</small>
-                    <div className="fw-bold">{route.estimatedDuration}</div>
-                  </Col>
-                  <Col xs={6}>
-                    <small className="text-muted">Distância</small>
-                    <div className="fw-bold">{route.estimatedDistance}</div>
-                  </Col>
-                </Row>
+      {routes.length === 0 ? (
+        <Row>
+          <Col>
+            <Card className="text-center py-5">
+              <Card.Body>
+                <i className="fas fa-route fa-3x text-muted mb-3"></i>
+                <h5>Nenhuma rota cadastrada</h5>
+                <p className="text-muted">Comece criando sua primeira rota de coleta</p>
+                <Button variant="primary" onClick={handleCreateRoute}>
+                  <i className="fas fa-plus me-2"></i>
+                  Criar Primeira Rota
+                </Button>
               </Card.Body>
-              <Card.Footer className="d-flex gap-2">
-                <Button variant="outline-primary" size="sm" className="flex-fill">
-                  <i className="fas fa-edit me-1"></i>
-                  Editar
-                </Button>
-                <Button variant="outline-info" size="sm" className="flex-fill">
-                  <i className="fas fa-map me-1"></i>
-                  Ver Mapa
-                </Button>
-                <Button variant="outline-success" size="sm" className="flex-fill">
-                  <i className="fas fa-optimize me-1"></i>
-                  Otimizar
-                </Button>
-              </Card.Footer>
             </Card>
           </Col>
-        ))}
-      </Row>
+        </Row>
+      ) : (
+        <Row>
+          {routes.map((route) => (
+            <Col xs={12} lg={6} xl={4} key={route.id} className="mb-4">
+              <Card className="h-100">
+                <Card.Header className="d-flex justify-content-between align-items-center">
+                  <h5 className="mb-0">{route.name}</h5>
+                  {getStatusBadge(route.status)}
+                </Card.Header>
+                <Card.Body>
+                  <p className="text-muted">{route.description || 'Sem descrição'}</p>
+                  
+                  <Row className="mb-3">
+                    <Col xs={6}>
+                      <small className="text-muted">Frequência</small>
+                      <div className="fw-bold">{getFrequencyLabel(route.frequency)}</div>
+                    </Col>
+                    <Col xs={6}>
+                      <small className="text-muted">Pontos</small>
+                      <div className="fw-bold">{route.collection_points_count || 0}</div>
+                    </Col>
+                  </Row>
 
-      {/* Mapa placeholder */}
-      <Row className="mt-4">
-        <Col>
-          <Card>
-            <Card.Header>
-              <h5 className="mb-0">
-                <i className="fas fa-map me-2"></i>
-                Visualização das Rotas
-              </h5>
-            </Card.Header>
-            <Card.Body>
-              <div className="map-container bg-light d-flex align-items-center justify-content-center">
-                <div className="text-center text-muted">
-                  <i className="fas fa-map fa-3x mb-3"></i>
-                  <p>Mapa interativo será implementado aqui</p>
-                  <small>Utilize a biblioteca Leaflet para visualização das rotas</small>
-                </div>
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+                  <Row className="mb-3">
+                    <Col xs={6}>
+                      <small className="text-muted">Duração</small>
+                      <div className="fw-bold">{route.estimated_duration || 'N/A'}</div>
+                    </Col>
+                    <Col xs={6}>
+                      <small className="text-muted">Distância</small>
+                      <div className="fw-bold">{route.estimated_distance || 0} km</div>
+                    </Col>
+                  </Row>
+                </Card.Body>
+                <Card.Footer className="d-flex gap-2 flex-wrap">
+                  <Button 
+                    variant="outline-primary" 
+                    size="sm" 
+                    className="flex-fill"
+                    onClick={() => handleEditRoute(route)}
+                  >
+                    <i className="fas fa-edit me-1"></i>
+                    Editar
+                  </Button>
+                  <Button 
+                    variant="outline-info" 
+                    size="sm" 
+                    className="flex-fill"
+                    onClick={() => handleViewMap(route)}
+                  >
+                    <i className="fas fa-map me-1"></i>
+                    Ver Mapa
+                  </Button>
+                  <Button 
+                    variant="outline-success" 
+                    size="sm" 
+                    className="flex-fill"
+                    onClick={() => handleOptimizeRoute(route.id)}
+                    disabled={optimizing === route.id}
+                  >
+                    {optimizing === route.id ? (
+                      <>
+                        <Spinner animation="border" size="sm" className="me-1" />
+                        Otimizando...
+                      </>
+                    ) : (
+                      <>
+                        <i className="fas fa-cog me-1"></i>
+                        Otimizar
+                      </>
+                    )}
+                  </Button>
+                  <Button 
+                    variant="outline-danger" 
+                    size="sm"
+                    onClick={() => handleDeleteRoute(route.id)}
+                  >
+                    <i className="fas fa-trash"></i>
+                  </Button>
+                </Card.Footer>
+              </Card>
+            </Col>
+          ))}
+        </Row>
+      )}
+
+      {/* Modais */}
+      <RouteModal
+        show={showRouteModal}
+        onHide={() => setShowRouteModal(false)}
+        onSave={handleSaveRoute}
+        route={selectedRoute}
+        collectionPoints={collectionPoints}
+      />
+
+      <RouteMapView
+        show={showMapModal}
+        onHide={() => setShowMapModal(false)}
+        route={selectedRoute}
+        collectionPoints={selectedRoute?.collection_points || []}
+      />
     </Container>
   );
 };
