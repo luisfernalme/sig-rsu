@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button, Badge, Form, InputGroup, ListGroup, Spinner } from 'react-bootstrap';
 import MapComponent from '../components/MapComponent';
 import CollectionPointModal from '../components/CollectionPointModal';
+import PointHistoryModal from '../components/PointHistoryModal';
 import { collectionPointsAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import './CollectionPoints.css';
@@ -18,6 +19,8 @@ const CollectionPoints = () => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterType, setFilterType] = useState('all');
   const [centerOnPoint, setCenterOnPoint] = useState(null);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [historyPoint, setHistoryPoint] = useState(null);
 
   // Hook para carregar dados reais
   useEffect(() => {
@@ -192,6 +195,11 @@ const CollectionPoints = () => {
       console.error('Erro ao registrar coleta:', error);
       toast.error('Erro ao registrar coleta.');
     }
+  };
+
+  const handleViewHistory = (point) => {
+    setHistoryPoint(point);
+    setShowHistoryModal(true);
   };
 
   // Dados simulados para fallback
@@ -475,7 +483,7 @@ const CollectionPoints = () => {
                       )}
                     </div>
 
-                    <div className="mt-2 d-flex gap-1">
+                    <div className="mt-2 d-flex gap-1 flex-wrap">
                       <Button
                         variant="outline-info"
                         size="sm"
@@ -486,6 +494,17 @@ const CollectionPoints = () => {
                         title="Ver no mapa"
                       >
                         <i className="fas fa-map-marked-alt"></i>
+                      </Button>
+                      <Button
+                        variant="outline-secondary"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleViewHistory(point);
+                        }}
+                        title="Ver histórico e fotos"
+                      >
+                        <i className="fas fa-history"></i>
                       </Button>
                       <Button
                         variant="outline-primary"
@@ -617,6 +636,14 @@ const CollectionPoints = () => {
 
             <div className="d-grid gap-2">
               <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => handleViewHistory(selectedPoint)}
+              >
+                <i className="fas fa-history me-2"></i>
+                Ver Histórico e Fotos
+              </Button>
+              <Button
                 variant="primary"
                 size="sm"
                 onClick={() => handleEditPoint(selectedPoint)}
@@ -645,6 +672,13 @@ const CollectionPoints = () => {
         onSave={handleSavePoint}
         editPoint={editingPoint}
         loading={saveLoading}
+      />
+
+      {/* Modal de Histórico e Fotos */}
+      <PointHistoryModal
+        show={showHistoryModal}
+        onHide={() => setShowHistoryModal(false)}
+        collectionPoint={historyPoint}
       />
     </div>
   );

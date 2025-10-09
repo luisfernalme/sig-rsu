@@ -5,11 +5,14 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters
 from django.db.models import Count, Avg, Sum, Q
 from datetime import date, datetime, timedelta
-from .models import CollectionPoint, CollectionPointRoute, CollectionRecord, WasteType, CollectionPointWasteType
+from .models import (
+    CollectionPoint, CollectionPointRoute, CollectionRecord, 
+    WasteType, CollectionPointWasteType, CollectionPointPhoto
+)
 from .serializers import (
     CollectionPointSerializer, CollectionPointDetailSerializer, CollectionPointRouteSerializer,
     CollectionRecordSerializer, WasteTypeSerializer, CollectionPointWasteTypeSerializer,
-    CollectionPointStatsSerializer, BulkCollectionSerializer
+    CollectionPointStatsSerializer, BulkCollectionSerializer, CollectionPointPhotoSerializer
 )
 
 
@@ -237,8 +240,40 @@ class CollectionPointViewSet(viewsets.ModelViewSet):
             collection_date__date__gte=since_date
         ).order_by('-collection_date')
         
-        serializer = CollectionRecordSerializer(collections, many=True)
+        serializer = CollectionRecordSerializer(collections, many=True, context={'request': request})
         return Response(serializer.data)
+    
+    @action(detail=True, methods=['get', 'post'])
+    def photos(self, request, pk=None):
+        """
+        Listar ou adicionar fotos do ponto
+        """
+        collection_point = self.get_object()
+        
+        if request.method == 'GET':
+            photos = collection_point.photos.all()
+            serializer = CollectionPointPhotoSerializer(photos, many=True, context={'request': request})
+            return Response(serializer.data)
+        
+        elif request.method == 'POST':
+            print("=== PHOTO UPLOAD DEBUG ===")
+            print(f"Request data: {request.data}")
+            print(f"Request FILES: {request.FILES}")
+            print(f"Content-Type: {request.content_type}")
+            
+            data = request.data.copy()
+            data['collection_point'] = collection_point.id
+            
+            print(f"Data após copy: {data}")
+            
+            serializer = CollectionPointPhotoSerializer(data=data, context={'request': request})
+            if serializer.is_valid():
+                photo = serializer.save()
+                print(f"Photo saved successfully: {photo.id}")
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            
+            print(f"Validation errors: {serializer.errors}")
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class CollectionRecordViewSet(viewsets.ModelViewSet):
@@ -366,3 +401,60 @@ class CollectionPointWasteTypeViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['collection_point', 'waste_type', 'is_primary']
+
+
+class CollectionPointPhotoViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet para fotos dos pontos de coleta
+    """
+    queryset = CollectionPointPhoto.objects.all()
+    serializer_class = CollectionPointPhotoSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_fields = ['collection_point', 'photo_type', 'is_primary', 'uploaded_by']
+    ordering_fields = ['uploaded_at', 'photo_type']
+    ordering = ['-uploaded_at']
+    
+    def perform_create(self, serializer):
+        """
+        Definir usuário que fez upload
+        """
+        serializer.save(uploaded_by=self.request.user)
+    
+    @action(detail=True, methods=['post'])
+    def set_primary(self, request, pk=None):
+        """
+        Definir como foto principal
+        """
+        photo = self.get_object()
+        
+        # Remover flag de foto principal das outras fotos do mesmo ponto
+        CollectionPointPhoto.objects.filter(
+            collection_point=photo.collection_point,
+            is_primary=True
+        ).update(is_primary=False)
+        
+        # Definir esta como principal
+        photo.is_primary = True
+        photo.save()
+        
+        serializer = self.get_serializer(photo)
+        return Response({
+            'message': 'Foto definida como principal!',
+            'photo': serializer.data
+        })
+    
+    @action(detail=False, methods=['get'])
+    def by_point(self, request):
+        """
+        Fotos de um ponto específico
+        """
+        point_id = request.query_params.get('point_id')
+        if not point_id:
+            return Response({
+                'error': 'ID do ponto é obrigatório.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        photos = CollectionPointPhoto.objects.filter(collection_point_id=point_id)
+        serializer = self.get_serializer(photos, many=True)
+        return Response(serializer.data)

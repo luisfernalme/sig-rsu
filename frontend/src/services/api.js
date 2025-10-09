@@ -193,6 +193,49 @@ export const collectionPointsAPI = {
     const response = await api.post(`/collection-points/${pointId}/collect/`, collectionData);
     return response.data;
   },
+
+  // Histórico de coletas
+  getCollectionHistory: async (pointId, params = {}) => {
+    const response = await api.get(`/collection-points/${pointId}/collection_history/`, { params });
+    return response.data;
+  },
+
+  // Fotos
+  getPhotos: async (pointId) => {
+    const response = await api.get(`/collection-points/${pointId}/photos/`);
+    return response.data;
+  },
+
+  uploadPhoto: async (pointId, photoData) => {
+    // Se photoData já é um FormData, usar diretamente
+    // Se não, criar um novo FormData
+    let formData;
+    if (photoData instanceof FormData) {
+      formData = photoData;
+    } else {
+      formData = new FormData();
+      for (const key in photoData) {
+        formData.append(key, photoData[key]);
+      }
+    }
+    
+    const response = await api.post(`/collection-points/${pointId}/photos/`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+
+  deletePhoto: async (photoId) => {
+    const response = await api.delete(`/photos/${photoId}/`);
+    return response.data;
+  },
+
+  setPrimaryPhoto: async (photoId) => {
+    const response = await api.post(`/photos/${photoId}/set_primary/`);
+    return response.data;
+  },
 };
 
 // Serviços de relatórios

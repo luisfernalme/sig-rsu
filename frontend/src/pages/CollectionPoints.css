@@ -1,31 +1,34 @@
-/* Container principal com mapa em tela cheia */
+/* ========================================
+   CONTAINER PRINCIPAL
+   ======================================== */
 .collection-points-container {
   position: fixed;
-  top: 56px; /* Altura da navbar */
+  top: 56px;
   left: 0;
   right: 0;
   bottom: 0;
   display: flex;
   overflow: hidden;
-  background-color: #f8f9fa;
+  background: #f8f9fa;
 }
 
-/* Sidebar lateral */
+/* ========================================
+   SIDEBAR
+   ======================================== */
 .collection-points-container .sidebar {
   position: relative;
-  background: #ffffff;
+  background: white;
   border-right: 1px solid #dee2e6;
-  color: #212529;
   transition: all 0.3s ease;
   display: flex;
   flex-direction: column;
-  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.08);
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
   z-index: 1000;
 }
 
 .collection-points-container .sidebar.open {
-  width: 380px;
-  min-width: 380px;
+  width: 400px;
+  min-width: 400px;
 }
 
 .collection-points-container .sidebar.closed {
@@ -34,26 +37,29 @@
   overflow: hidden;
 }
 
+/* Header da Sidebar */
 .collection-points-container .sidebar-header {
   padding: 20px;
-  background: #0d6efd;
-  color: white;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: white;
+  color: #212529;
+  border-bottom: 1px solid #dee2e6;
   flex-shrink: 0;
 }
 
 .collection-points-container .sidebar-header h5 {
-  color: white;
-  font-weight: 700;
+  color: #212529;
+  font-weight: 600;
   margin: 0;
+  font-size: 1.25rem;
 }
 
+/* Conteúdo da Sidebar */
 .collection-points-container .sidebar-content {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  background-color: #f8f9fa;
-  color: #212529;
+  background: white;
+  padding: 20px;
 }
 
 .collection-points-container .sidebar-content::-webkit-scrollbar {
@@ -61,19 +67,21 @@
 }
 
 .collection-points-container .sidebar-content::-webkit-scrollbar-track {
-  background: #e9ecef;
+  background: #f8f9fa;
 }
 
 .collection-points-container .sidebar-content::-webkit-scrollbar-thumb {
-  background: #adb5bd;
+  background: #dee2e6;
   border-radius: 3px;
 }
 
 .collection-points-container .sidebar-content::-webkit-scrollbar-thumb:hover {
-  background: #6c757d;
+  background: #adb5bd;
 }
 
-/* Botão toggle da sidebar quando fechada */
+/* ========================================
+   BOTÃO TOGGLE
+   ======================================== */
 .collection-points-container .sidebar-toggle {
   position: fixed;
   left: 0;
@@ -81,64 +89,89 @@
   transform: translateY(-50%);
   z-index: 999;
   border-radius: 0 8px 8px 0;
-  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.15);
-  padding: 15px 10px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.15);
+  padding: 16px 10px;
+  border: none;
+  color: white;
+  transition: all 0.3s;
 }
 
-/* Grid de estatísticas */
+.collection-points-container .sidebar-toggle:hover {
+  transform: translateY(-50%) translateX(2px);
+  box-shadow: 3px 3px 12px rgba(102, 126, 234, 0.3);
+}
+
+/* ========================================
+   ESTATÍSTICAS
+   ======================================== */
 .collection-points-container .stats-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
-  margin-bottom: 20px;
+  gap: 15px;
+  margin-bottom: 15px;
 }
 
 .collection-points-container .stat-card {
-  background: rgba(255, 255, 255, 0.95);
+  background: white;
   padding: 15px;
   border-radius: 8px;
   text-align: center;
-  transition: all 0.2s;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s;
+  border: 1px solid #e9ecef;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .collection-points-container .stat-card:hover {
-  background: white;
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-color: #667eea;
 }
 
 .collection-points-container .stat-value {
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 700;
-  line-height: 1;
+  color: #667eea;
   margin-bottom: 5px;
 }
 
 .collection-points-container .stat-label {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
+  color: #6c757d;
   letter-spacing: 0.5px;
-  color: rgba(255, 255, 255, 0.9);
 }
 
-/* Itens da lista de pontos */
+/* ========================================
+   LISTA DE PONTOS
+   ======================================== */
 .collection-points-container .point-item {
-  border: none !important;
-  border-bottom: 1px solid #e9ecef !important;
+  background: white;
+  border: 1px solid #e9ecef !important;
+  border-radius: 8px !important;
   padding: 15px !important;
+  margin-bottom: 10px !important;
   cursor: pointer;
-  transition: all 0.2s;
-  background-color: white !important;
-  margin-bottom: 0 !important;
-  color: #212529;
+  transition: all 0.3s;
+}
+
+.collection-points-container .point-item:hover {
+  background: #f8f9fa;
+  border-color: #667eea !important;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+}
+
+.collection-points-container .point-item.active {
+  background: #e7f1ff;
+  border-color: #667eea !important;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
 }
 
 .collection-points-container .point-item .fw-bold {
   color: #212529;
   font-weight: 600;
+  font-size: 1rem;
 }
 
 .collection-points-container .point-item .text-muted,
@@ -146,36 +179,36 @@
   color: #6c757d !important;
 }
 
-.collection-points-container .point-item:hover {
-  background-color: #f8f9fa !important;
-  transform: translateX(3px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-.collection-points-container .point-item.active {
-  background-color: #e7f1ff !important;
-  border-left: 4px solid #0d6efd !important;
-  box-shadow: 0 2px 8px rgba(13, 110, 253, 0.15);
-}
-
-/* Mapa em tela cheia */
+/* ========================================
+   MAPA
+   ======================================== */
 .map-fullscreen {
   flex: 1;
   position: relative;
   height: 100%;
+  border-radius: 0;
+  background: #e9ecef;
 }
 
-/* Card de detalhes do ponto */
+.leaflet-container {
+  height: 100%;
+  width: 100%;
+  z-index: 1;
+}
+
+/* ========================================
+   CARD DE DETALHES
+   ======================================== */
 .collection-points-container .point-details-card {
   position: absolute;
   top: 20px;
   right: 20px;
   background: white;
-  border-radius: 10px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-  border: 1px solid #dee2e6;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  border: 1px solid #e9ecef;
   padding: 24px;
-  max-width: 360px;
+  max-width: 400px;
   z-index: 1000;
   animation: slideInRight 0.3s ease;
 }
@@ -193,14 +226,14 @@
 
 .collection-points-container .point-details-card h5 {
   color: #212529;
-  font-weight: 700;
+  font-weight: 600;
   font-size: 1.25rem;
-  margin-bottom: 16px;
+  margin-bottom: 15px;
 }
 
 .collection-points-container .point-details-card .badge {
   font-size: 0.75rem;
-  padding: 6px 10px;
+  padding: 6px 12px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -211,34 +244,108 @@
   font-size: 0.875rem;
 }
 
-/* Ajustes para o componente do mapa */
-.leaflet-container {
-  height: 100%;
-  width: 100%;
-  z-index: 1;
-}
-
-/* Estilo para badges */
-.collection-points-container .badge {
-  font-size: 0.7rem;
-  padding: 5px 10px;
-  font-weight: 600;
-}
-
-/* Botões de ação nos cards */
-.collection-points-container .point-item .btn {
-  padding: 4px 8px;
-  font-size: 0.75rem;
-  border-radius: 4px;
-}
-
 .collection-points-container .point-details-card .btn {
   font-weight: 600;
   border-radius: 6px;
-  padding: 10px;
+  padding: 10px 20px;
+  transition: all 0.3s;
 }
 
-/* Responsividade */
+/* ========================================
+   FORMULÁRIOS
+   ======================================== */
+.collection-points-container .sidebar .form-control,
+.collection-points-container .sidebar .form-select {
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  padding: 10px 15px;
+  font-size: 0.9rem;
+  transition: all 0.3s;
+  background: white;
+  color: #495057;
+}
+
+.collection-points-container .sidebar .form-control:focus,
+.collection-points-container .sidebar .form-select:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+  background: white;
+  color: #495057;
+}
+
+.collection-points-container .sidebar .input-group-text {
+  background: #f8f9fa;
+  border: 1px solid #ced4da;
+  color: #495057;
+}
+
+.collection-points-container .sidebar .form-label,
+.collection-points-container .sidebar label {
+  color: #495057;
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+/* ========================================
+   BOTÕES
+   ======================================== */
+.collection-points-container .sidebar .btn {
+  border-radius: 6px;
+  font-weight: 600;
+  padding: 10px 20px;
+  transition: all 0.3s;
+}
+
+.collection-points-container .sidebar .btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+}
+
+.collection-points-container .sidebar .btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.collection-points-container .sidebar .btn-light {
+  background: white;
+  border: 1px solid #dee2e6;
+  color: #495057;
+}
+
+.collection-points-container .sidebar .btn-light:hover {
+  background: #f8f9fa;
+  border-color: #adb5bd;
+}
+
+.collection-points-container .sidebar .btn-link {
+  color: #667eea;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.collection-points-container .sidebar .btn-link:hover {
+  color: #764ba2;
+  text-decoration: underline;
+}
+
+/* ========================================
+   PROGRESS BAR
+   ======================================== */
+.collection-points-container .progress {
+  height: 10px;
+  border-radius: 5px;
+  background: #e9ecef;
+}
+
+.collection-points-container .progress-bar {
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  border-radius: 5px;
+}
+
+/* ========================================
+   RESPONSIVIDADE
+   ======================================== */
 @media (max-width: 768px) {
   .collection-points-container {
     top: 56px;
@@ -247,39 +354,39 @@
   .collection-points-container .sidebar.open {
     position: absolute;
     width: 100%;
-    max-width: 340px;
+    max-width: 360px;
     height: 100%;
     z-index: 1001;
   }
 
   .collection-points-container .point-details-card {
-    max-width: calc(100% - 40px);
-    left: 20px;
-    right: 20px;
+    max-width: calc(100% - 32px);
+    left: 16px;
+    right: 16px;
     padding: 20px;
   }
 
   .collection-points-container .stats-grid {
     grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
+    gap: 10px;
   }
 
   .collection-points-container .stat-card {
-    padding: 10px;
+    padding: 15px 10px;
   }
 
   .collection-points-container .stat-value {
-    font-size: 20px;
+    font-size: 22px;
   }
 
   .collection-points-container .stat-label {
-    font-size: 9px;
+    font-size: 10px;
   }
 }
 
 @media (max-width: 576px) {
   .collection-points-container .sidebar.open {
-    max-width: 300px;
+    max-width: 320px;
   }
 
   .collection-points-container .stats-grid {
@@ -288,131 +395,50 @@
 
   .collection-points-container .point-details-card {
     top: auto;
-    bottom: 20px;
-    max-height: 50vh;
+    bottom: 16px;
+    max-height: 60vh;
     overflow-y: auto;
   }
 }
 
-/* Animações suaves */
-.fade-in {
-  animation: fadeIn 0.3s ease;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-/* Melhorias nos formulários dentro da sidebar */
-.collection-points-container .sidebar .form-control,
-.collection-points-container .sidebar .form-select {
-  background: white;
-  border: 1px solid #ced4da;
-  font-size: 0.875rem;
-}
-
-.collection-points-container .sidebar .form-control:focus,
-.collection-points-container .sidebar .form-select:focus {
-  background: white;
-  border-color: #0d6efd;
-  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
-}
-
-.collection-points-container .sidebar .input-group-text {
-  background: white;
-  border: 1px solid #ced4da;
-  color: #6c757d;
-}
-
-.collection-points-container .sidebar-header .form-label,
-.collection-points-container .sidebar-header label {
-  color: rgba(255, 255, 255, 0.95) !important;
-  font-size: 0.8rem;
-  font-weight: 600;
-  margin-bottom: 8px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.collection-points-container .sidebar-content .form-label,
-.collection-points-container .sidebar-content label {
-  color: #212529 !important;
-  font-size: 0.8rem;
-  font-weight: 600;
-  margin-bottom: 8px;
-}
-
-/* Progress bar customizada */
-.collection-points-container .progress {
-  height: 10px;
-  border-radius: 5px;
-  background-color: #e9ecef;
-}
-
-.collection-points-container .progress-bar {
-  border-radius: 5px;
-  transition: width 0.6s ease;
-}
-
-/* Botões na sidebar */
-.collection-points-container .sidebar .btn-light {
-  background: white;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  font-weight: 600;
-  transition: all 0.2s;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.collection-points-container .sidebar .btn-light:hover {
-  background: #f8f9fa;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  border-color: white;
-}
-
-.collection-points-container .sidebar .btn-link {
-  color: white;
-  text-decoration: none;
-}
-
-.collection-points-container .sidebar .btn-link:hover {
-  color: rgba(255, 255, 255, 0.8);
-}
-
-/* Ajustes para lista de pontos */
-.collection-points-container .list-group-item {
-  transition: all 0.2s ease;
-}
-
-.collection-points-container .list-group-flush > .list-group-item {
-  border-width: 0 0 1px;
-}
-
-.collection-points-container .list-group-flush > .list-group-item:first-child {
-  border-top: 1px solid #e9ecef;
-}
-
-/* Scrollbar personalizada para navegadores Firefox */
+/* ========================================
+   SCROLLBAR FIREFOX
+   ======================================== */
 .collection-points-container .sidebar-content {
   scrollbar-width: thin;
-  scrollbar-color: #adb5bd #e9ecef;
+  scrollbar-color: #dee2e6 #f8f9fa;
 }
 
-/* Hover effects e transições suaves */
-.collection-points-container .btn {
-  transition: all 0.2s ease;
-}
-
+/* ========================================
+   ESTADOS INTERATIVOS
+   ======================================== */
 .collection-points-container .btn:active {
   transform: scale(0.98);
 }
 
-/* Customização do toast notification */
-.collection-points-container + div[role="status"] {
-  z-index: 9999;
+/* ========================================
+   LOADING STATE
+   ======================================== */
+.collection-points-container .loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #6c757d;
 }
+
+/* ========================================
+   EMPTY STATE
+   ======================================== */
+.collection-points-container .empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: #6c757d;
+}
+
+.collection-points-container .empty-state i {
+  font-size: 48px;
+  margin-bottom: 15px;
+  color: #adb5bd;
+}
+

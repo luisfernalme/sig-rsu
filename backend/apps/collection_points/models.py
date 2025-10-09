@@ -167,3 +167,44 @@ class CollectionPointWasteType(models.Model):
     
     def __str__(self):
         return f"{self.collection_point.code} - {self.waste_type.name}"
+
+
+class CollectionPointPhoto(models.Model):
+    """
+    Galeria de fotos dos pontos de coleta
+    """
+    PHOTO_TYPE_CHOICES = [
+        ('location', 'Localização'),
+        ('container', 'Contêiner'),
+        ('before_collection', 'Antes da Coleta'),
+        ('after_collection', 'Depois da Coleta'),
+        ('maintenance', 'Manutenção'),
+        ('damage', 'Dano/Problema'),
+        ('other', 'Outro'),
+    ]
+    
+    collection_point = models.ForeignKey(CollectionPoint, on_delete=models.CASCADE, related_name='photos')
+    collection_record = models.ForeignKey(CollectionRecord, on_delete=models.CASCADE, null=True, blank=True, related_name='photos')
+    
+    photo = models.ImageField(upload_to='collection_point_photos/%Y/%m/', verbose_name='Foto')
+    photo_type = models.CharField(max_length=20, choices=PHOTO_TYPE_CHOICES, default='other', verbose_name='Tipo de Foto')
+    
+    title = models.CharField(max_length=100, blank=True, verbose_name='Título')
+    description = models.TextField(blank=True, verbose_name='Descrição')
+    
+    # Localização da foto (pode ser diferente do ponto)
+    photo_location = models.PointField(null=True, blank=True, verbose_name='Localização da Foto')
+    
+    # Metadados
+    uploaded_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='uploaded_photos')
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    is_primary = models.BooleanField(default=False, verbose_name='Foto Principal')
+    
+    class Meta:
+        db_table = 'collection_point_photos'
+        verbose_name = 'Foto do Ponto de Coleta'
+        verbose_name_plural = 'Fotos dos Pontos de Coleta'
+        ordering = ['-uploaded_at']
+    
+    def __str__(self):
+        return f"{self.collection_point.code} - {self.photo_type} ({self.uploaded_at.strftime('%d/%m/%Y')})"

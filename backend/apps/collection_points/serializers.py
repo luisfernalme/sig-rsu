@@ -1,6 +1,9 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from .models import CollectionPoint, CollectionPointRoute, CollectionRecord, WasteType, CollectionPointWasteType
+from .models import (
+    CollectionPoint, CollectionPointRoute, CollectionRecord, 
+    WasteType, CollectionPointWasteType, CollectionPointPhoto
+)
 
 User = get_user_model()
 
@@ -301,6 +304,52 @@ class CollectionPointWasteTypeSerializer(serializers.ModelSerializer):
         read_only_fields = ['id']
 
 
+class CollectionPointPhotoSerializer(serializers.ModelSerializer):
+    """
+    Serializer para fotos dos pontos de coleta
+    """
+    uploaded_by_name = serializers.CharField(source='uploaded_by.get_full_name', read_only=True)
+    photo_type_display = serializers.CharField(source='get_photo_type_display', read_only=True)
+    photo_url = serializers.SerializerMethodField()
+    collection_point_name = serializers.CharField(source='collection_point.name', read_only=True)
+    
+    class Meta:
+        model = CollectionPointPhoto
+        fields = [
+            'id', 'collection_point', 'collection_point_name', 'collection_record',
+            'photo', 'photo_url', 'photo_type', 'photo_type_display',
+            'title', 'description', 'photo_location', 'uploaded_by',
+            'uploaded_by_name', 'uploaded_at', 'is_primary'
+        ]
+        read_only_fields = ['id', 'uploaded_at', 'uploaded_by']
+        extra_kwargs = {
+            'collection_record': {'required': False, 'allow_null': True},
+            'title': {'required': False, 'allow_blank': True},
+            'description': {'required': False, 'allow_blank': True},
+            'photo_location': {'required': False, 'allow_null': True},
+        }
+    
+    def get_photo_url(self, obj):
+        """
+        URL completa da foto
+        """
+        request = self.context.get('request')
+        if obj.photo and hasattr(obj.photo, 'url'):
+            if request is not None:
+                return request.build_absolute_uri(obj.photo.url)
+            return obj.photo.url
+        return None
+    
+    def create(self, validated_data):
+        """
+        Criar foto associando o usuário
+        """
+        request = self.context.get('request')
+        if request and hasattr(request, 'user'):
+            validated_data['uploaded_by'] = request.user
+        return super().create(validated_data)
+
+
 class CollectionPointDetailSerializer(CollectionPointSerializer):
     """
     Serializer detalhado para pontos de coleta
@@ -309,10 +358,13 @@ class CollectionPointDetailSerializer(CollectionPointSerializer):
     collections = CollectionRecordSerializer(many=True, read_only=True)
     waste_types = serializers.SerializerMethodField()
     recent_collections = serializers.SerializerMethodField()
+    photos = serializers.SerializerMethodField()
+    primary_photo = serializers.SerializerMethodField()
     
     class Meta(CollectionPointSerializer.Meta):
         fields = CollectionPointSerializer.Meta.fields + [
-            'routes', 'collections', 'waste_types', 'recent_collections'
+            'routes', 'collections', 'waste_types', 'recent_collections',
+            'photos', 'primary_photo'
         ]
     
     def get_waste_types(self, obj):
@@ -327,7 +379,27 @@ class CollectionPointDetailSerializer(CollectionPointSerializer):
         Últimas 10 coletas
         """
         recent = obj.collections.all()[:10]
-        return CollectionRecordSerializer(recent, many=True).data
+        return CollectionRecordSerializer(recent, many=True, context=self.context).data
+    
+    def get_photos(self, obj):
+        """
+        Fotos do ponto de coleta
+        """
+        photos = obj.photos.all()[:20]  # Limitar a 20 fotos mais recentes
+        return CollectionPointPhotoSerializer(photos, many=True, context=self.context).data
+    
+    def get_primary_photo(self, obj):
+        """
+        Foto principal do ponto
+        """
+        photo = obj.photos.filter(is_primary=True).first()
+        if photo:
+            return CollectionPointPhotoSerializer(photo, context=self.context).data
+        # Se não houver foto principal, retornar a mais recente
+        photo = obj.photos.first()
+        if photo:
+            return CollectionPointPhotoSerializer(photo, context=self.context).data
+        return None
 
 
 class CollectionPointStatsSerializer(serializers.Serializer):
