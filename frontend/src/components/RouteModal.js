@@ -28,6 +28,7 @@ const RouteModal = ({ show, onHide, onSave, route, collectionPoints = [] }) => {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [mapCenter, setMapCenter] = useState([-15.7942, -47.8825]); // Brasília
+  const [useRealRouting, setUseRealRouting] = useState(true); // Usar roteamento real por padrão
 
   useEffect(() => {
     if (!show) return; // Só executar quando modal está visível
@@ -168,21 +169,53 @@ const RouteModal = ({ show, onHide, onSave, route, collectionPoints = [] }) => {
     console.log('Pontos processados para rota:', points);
 
     if (points.length >= 1) {
-      setRoutePoints(points);
-      
-      // Calcular distância se houver pelo menos 2 pontos
-      if (points.length >= 2) {
-        const distance = calculateTotalDistance(points);
-        console.log('Distância calculada:', distance);
-        setFormData(prev => ({
-          ...prev,
-          estimated_distance: distance
-        }));
-      }
-      
       // Centralizar mapa no primeiro ponto
       if (points.length > 0) {
         setMapCenter(points[0]);
+      }
+
+      // Se houver pelo menos 2 pontos, buscar rota
+      if (points.length >= 2) {
+        setLoading(true);
+        
+        if (useRealRouting) {
+          // Buscar rota real seguindo as ruas
+          fetchRealRoute(points)
+            .then(result => {
+              console.log('Rota real obtida:', result);
+              setRoutePoints(result.points);
+              setFormData(prev => ({
+                ...prev,
+                estimated_distance: result.distance,
+                estimated_duration: result.duration || prev.estimated_duration
+              }));
+            })
+            .catch(error => {
+              console.error('Erro ao obter rota:', error);
+              // Fallback: usar linha reta
+              setRoutePoints(points);
+              const distance = calculateTotalDistanceHaversine(points);
+              setFormData(prev => ({
+                ...prev,
+                estimated_distance: distance
+              }));
+            })
+            .finally(() => {
+              setLoading(false);
+            });
+        } else {
+          // Usar linha reta entre pontos
+          setRoutePoints(points);
+          const distance = calculateTotalDistanceHaversine(points);
+          setFormData(prev => ({
+            ...prev,
+            estimated_distance: distance
+          }));
+          setLoading(false);
+        }
+      } else {
+        // Apenas 1 ponto
+        setRoutePoints(points);
       }
     } else {
       console.warn('Nenhum ponto válido encontrado!');
@@ -190,15 +223,100 @@ const RouteModal = ({ show, onHide, onSave, route, collectionPoints = [] }) => {
     }
   };
 
-  // Calcular distância total entre pontos (Haversine)
-  const calculateTotalDistance = (points) => {
+  // Simplificar pontos da rota (Douglas-Peucker simplificado)
+  const simplifyRoute = (points, maxPoints = 200) => {
+    if (points.length <= maxPoints) return points;
+    
+    // Pegar pontos em intervalos regulares para reduzir quantidade
+    const step = Math.ceil(points.length / maxPoints);
+    const simplified = [];
+    
+    for (let i = 0; i < points.length; i += step) {
+      simplified.push(points[i]);
+    }
+    
+    // Garantir que o último ponto seja incluído
+    if (simplified[simplified.length - 1] !== points[points.length - 1]) {
+      simplified.push(points[points.length - 1]);
+    }
+    
+    console.log(`Rota simplificada de ${points.length} para ${simplified.length} pontos`);
+    return simplified;
+  };
+
+  // Converter segundos para formato HH:MM:SS
+  const formatDuration = (seconds) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
+    
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // Buscar rota real usando OSRM (Open Source Routing Machine)
+  const fetchRealRoute = async (points) => {
+    if (points.length < 2) return { points, distance: 0 };
+
+    try {
+      // Converter pontos para formato OSRM: lng,lat;lng,lat;...
+      const coordinates = points.map(p => `${p[1]},${p[0]}`).join(';');
+      
+      // API pública do OSRM - usando 'full' para máximo detalhe, depois simplificamos
+      const url = `https://router.project-osrm.org/route/v1/driving/${coordinates}?overview=full&geometries=geojson`;
+      
+      console.log('Buscando rota real via OSRM:', url);
+      
+      const response = await fetch(url);
+      const data = await response.json();
+      
+      if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
+        const route = data.routes[0];
+        
+        // Extrair coordenadas da geometria (vem em GeoJSON)
+        let routeCoordinates = route.geometry.coordinates.map(coord => [coord[1], coord[0]]);
+        
+        // Simplificar ainda mais se necessário
+        routeCoordinates = simplifyRoute(routeCoordinates);
+        
+        // Distância em metros, converter para km
+        const distance = (route.distance / 1000).toFixed(2);
+        
+        // Duração em segundos, converter para HH:MM:SS
+        const duration = formatDuration(route.duration);
+        
+        console.log(`Rota real calculada: ${distance} km, ${duration}, ${routeCoordinates.length} pontos`);
+        
+        return {
+          points: routeCoordinates,
+          distance: parseFloat(distance),
+          duration: duration
+        };
+      } else {
+        console.warn('OSRM não retornou rota válida, usando linha reta');
+        return fallbackStraightRoute(points);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar rota real:', error);
+      console.log('Fallback para linha reta entre pontos');
+      return fallbackStraightRoute(points);
+    }
+  };
+
+  // Fallback: linha reta com cálculo Haversine
+  const fallbackStraightRoute = (points) => {
+    const distance = calculateTotalDistanceHaversine(points);
+    return { points, distance };
+  };
+
+  // Calcular distância total entre pontos (Haversine - linha reta)
+  const calculateTotalDistanceHaversine = (points) => {
     if (points.length < 2) return 0;
 
     let totalDistance = 0;
     for (let i = 0; i < points.length - 1; i++) {
       totalDistance += calculateDistance(points[i], points[i + 1]);
     }
-    return totalDistance.toFixed(2);
+    return parseFloat(totalDistance.toFixed(2));
   };
 
   // Fórmula de Haversine para calcular distância entre dois pontos
@@ -529,13 +647,29 @@ const RouteModal = ({ show, onHide, onSave, route, collectionPoints = [] }) => {
                 <h6 className="mb-0">Visualização da Rota</h6>
                 <div>
                   <Button
+                    variant={useRealRouting ? "success" : "outline-secondary"}
+                    size="sm"
+                    onClick={() => {
+                      setUseRealRouting(!useRealRouting);
+                      // Recalcular rota com novo modo
+                      if (selectedPoints.length >= 2) {
+                        updateRouteFromPoints(selectedPoints);
+                      }
+                    }}
+                    className="me-2"
+                    title={useRealRouting ? "Rota segue as ruas" : "Linha reta entre pontos"}
+                  >
+                    <i className={useRealRouting ? "fas fa-route" : "fas fa-draw-polygon"}></i> 
+                    {useRealRouting ? 'GPS' : 'Linha'}
+                  </Button>
+                  <Button
                     variant={manualEditMode ? "primary" : "outline-secondary"}
                     size="sm"
                     onClick={toggleManualEdit}
                     className="me-2"
                     title="Ativar modo de edição manual"
                   >
-                    <i className="fas fa-edit"></i> {manualEditMode ? 'Manual' : 'Automático'}
+                    <i className="fas fa-edit"></i> {manualEditMode ? 'Manual' : 'Auto'}
                   </Button>
                   <Button
                     variant="outline-success"
@@ -571,7 +705,34 @@ const RouteModal = ({ show, onHide, onSave, route, collectionPoints = [] }) => {
                 <div className="text-danger small mb-2">{errors.geometry}</div>
               )}
 
-              <div style={{ height: '450px', border: '1px solid #dee2e6', borderRadius: '4px', overflow: 'hidden' }}>
+              {loading && (
+                <div className="text-center mb-2">
+                  <Spinner animation="border" size="sm" className="me-2" />
+                  <small className="text-muted">
+                    {useRealRouting ? 'Calculando rota seguindo as ruas...' : 'Calculando rota...'}
+                  </small>
+                </div>
+              )}
+
+              <div style={{ height: '450px', border: '1px solid #dee2e6', borderRadius: '4px', overflow: 'hidden', position: 'relative' }}>
+                {loading && (
+                  <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+                    zIndex: 1000,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexDirection: 'column'
+                  }}>
+                    <Spinner animation="border" variant="primary" />
+                    <small className="text-muted mt-2">Buscando rota...</small>
+                  </div>
+                )}
                 {show && (
                   <MapContainer
                     key={`map-${show ? 'open' : 'closed'}`}
