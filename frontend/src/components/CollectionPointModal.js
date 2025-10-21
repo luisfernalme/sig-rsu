@@ -6,7 +6,8 @@ const CollectionPointModal = ({
   show, 
   onHide, 
   onSave, 
-  editPoint = null, 
+  editPoint = null,
+  preselectedLocation = null,
   loading = false 
 }) => {
   const [formData, setFormData] = useState({
@@ -24,10 +25,18 @@ const CollectionPointModal = ({
   const [selectedLocation, setSelectedLocation] = useState(
     editPoint?.latitude_read && editPoint?.longitude_read 
       ? { latitude: editPoint.latitude_read, longitude: editPoint.longitude_read }
-      : null
+      : preselectedLocation
   );
 
   const [showLocationHelp, setShowLocationHelp] = useState(false);
+
+  // Atualizar localização quando preselectedLocation mudar
+  React.useEffect(() => {
+    if (preselectedLocation) {
+      setSelectedLocation(preselectedLocation);
+      setShowLocationHelp(false);
+    }
+  }, [preselectedLocation]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -230,6 +239,13 @@ const CollectionPointModal = ({
                 Localização no Mapa
               </h5>
 
+              {!editPoint && !selectedLocation && (
+                <Alert variant="info" className="mb-3">
+                  <i className="fas fa-info-circle me-2"></i>
+                  A localização foi definida quando você clicou no mapa. Você pode ajustá-la clicando em um novo local.
+                </Alert>
+              )}
+
               {showLocationHelp && (
                 <Alert variant="warning" className="mb-3">
                   <i className="fas fa-exclamation-triangle me-2"></i>
@@ -249,7 +265,10 @@ const CollectionPointModal = ({
               <div className="border rounded p-2" style={{ backgroundColor: '#f8f9fa' }}>
                 <small className="text-muted d-block mb-2">
                   <i className="fas fa-mouse-pointer me-1"></i>
-                  Clique no mapa para selecionar a localização do ponto de coleta
+                  {editPoint 
+                    ? 'Clique no mapa para ajustar a localização do ponto de coleta' 
+                    : 'Clique no mapa para ajustar a localização, se necessário'
+                  }
                 </small>
                 
                 <MapComponent

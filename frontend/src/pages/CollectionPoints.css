@@ -442,3 +442,79 @@
   color: #adb5bd;
 }
 
+/* ========================================
+   OVERLAY DE SELEÇÃO DE LOCALIZAÇÃO
+   ======================================== */
+.location-selection-overlay {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  animation: slideDown 0.3s ease;
+  pointer-events: none;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.location-selection-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  border: 2px solid #667eea;
+  padding: 24px;
+  min-width: 320px;
+  text-align: center;
+  pointer-events: auto;
+}
+
+.location-selection-card h5 {
+  color: #212529;
+  font-weight: 600;
+  font-size: 1.25rem;
+  margin-bottom: 12px;
+}
+
+.location-selection-card p {
+  color: #6c757d;
+  font-size: 0.95rem;
+  margin-bottom: 16px;
+}
+
+.location-selection-card .btn {
+  border-radius: 6px;
+  font-weight: 600;
+  padding: 10px 24px;
+  transition: all 0.3s;
+}
+
+/* Cursor do mapa em modo seleção */
+.leaflet-container.leaflet-grab {
+  cursor: crosshair !important;
+}
+
+.leaflet-container.selection-mode {
+  cursor: crosshair !important;
+}
+
+@media (max-width: 576px) {
+  .location-selection-overlay {
+    left: 16px;
+    right: 16px;
+    transform: none;
+  }
+
+  .location-selection-card {
+    min-width: auto;
+    width: 100%;
+  }
+}

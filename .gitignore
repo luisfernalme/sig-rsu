@@ -31,8 +31,10 @@ local_settings.py
 db.sqlite3
 db.sqlite3-journal
 /media
-/staticfiles
-/static
+/staticfiles/
+/static/
+backend/staticfiles/
+backend/logs/
 
 # Node
 node_modules/

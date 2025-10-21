@@ -36,14 +36,6 @@ const MapComponent = ({
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap contributors'
       }).addTo(mapInstanceRef.current);
-
-      // Adicionar listener de clique no mapa para seleção de localização
-      if (onMapClick) {
-        mapInstanceRef.current.on('click', (e) => {
-          const { lat, lng } = e.latlng;
-          onMapClick({ latitude: lat, longitude: lng });
-        });
-      }
     }
 
     return () => {
@@ -54,6 +46,40 @@ const MapComponent = ({
     };
   }, []);
 
+  // Gerenciar listener de clique no mapa
+  useEffect(() => {
+    if (!mapInstanceRef.current) return;
+
+    const handleMapClick = (e) => {
+      const { lat, lng } = e.latlng;
+      if (onMapClick) {
+        onMapClick({ latitude: lat, longitude: lng });
+      }
+    };
+
+    // Remover listeners anteriores e adicionar novo
+    mapInstanceRef.current.off('click');
+    mapInstanceRef.current.on('click', handleMapClick);
+
+    return () => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.off('click', handleMapClick);
+      }
+    };
+  }, [onMapClick]);
+
+  // Atualizar cursor do mapa quando em modo de seleção
+  useEffect(() => {
+    if (!mapInstanceRef.current) return;
+
+    const mapContainer = mapInstanceRef.current.getContainer();
+    if (isSelectionMode) {
+      mapContainer.style.cursor = 'crosshair';
+    } else {
+      mapContainer.style.cursor = '';
+    }
+  }, [isSelectionMode]);
+
   // Atualizar pontos de coleta
   useEffect(() => {
     if (!mapInstanceRef.current) return;
@@ -62,10 +88,15 @@ const MapComponent = ({
 
     // Limpar marcadores existentes (simples approach)
     map.eachLayer(layer => {
-      if (layer instanceof L.Marker) {
+      if (layer instanceof L.Marker && layer !== selectionMarkerRef.current) {
         map.removeLayer(layer);
       }
     });
+
+    // Não mostrar pontos quando está em modo de seleção
+    if (isSelectionMode) {
+      return;
+    }
 
     // Adicionar pontos de coleta
     points.forEach(point => {
@@ -155,7 +186,7 @@ const MapComponent = ({
       }
     });
 
-  }, [points, routes, vehicles]);
+  }, [points, routes, vehicles, isSelectionMode]);
 
   // Gerenciar marcador de seleção
   useEffect(() => {

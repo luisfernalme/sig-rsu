@@ -21,6 +21,8 @@ const CollectionPoints = () => {
   const [centerOnPoint, setCenterOnPoint] = useState(null);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [historyPoint, setHistoryPoint] = useState(null);
+  const [isSelectingLocation, setIsSelectingLocation] = useState(false);
+  const [selectedLocationForNewPoint, setSelectedLocationForNewPoint] = useState(null);
 
   // Hook para carregar dados reais
   useEffect(() => {
@@ -74,11 +76,29 @@ const CollectionPoints = () => {
 
   const handleCreatePoint = () => {
     setEditingPoint(null);
-    setShowModal(true);
+    setIsSelectingLocation(true);
+    setSelectedLocationForNewPoint(null);
+    toast.success('Clique no mapa para selecionar a localização do novo ponto de coleta');
+  };
+
+  const handleMapClickForNewPoint = (location) => {
+    if (isSelectingLocation) {
+      setSelectedLocationForNewPoint(location);
+      setIsSelectingLocation(false);
+      setShowModal(true);
+      toast.success('Localização selecionada! Preencha as informações do ponto.');
+    }
+  };
+
+  const handleCancelLocationSelection = () => {
+    setIsSelectingLocation(false);
+    setSelectedLocationForNewPoint(null);
   };
 
   const handleEditPoint = (point) => {
     setEditingPoint(point);
+    setSelectedLocationForNewPoint(null);
+    setIsSelectingLocation(false);
     setShowModal(true);
   };
 
@@ -102,6 +122,8 @@ const CollectionPoints = () => {
       
       setShowModal(false);
       setEditingPoint(null);
+      setSelectedLocationForNewPoint(null);
+      setIsSelectingLocation(false);
     } catch (error) {
       console.error('Erro ao salvar ponto:', error);
       console.error('Response data:', error.response?.data);
@@ -567,17 +589,46 @@ const CollectionPoints = () => {
             <Spinner animation="border" variant="primary" />
           </div>
         ) : (
-          <MapComponent
-            center={[-23.5505, -46.6333]}
-            zoom={12}
-            points={filteredPoints.filter(point => 
-              point.latitude && point.longitude && 
-              !isNaN(point.latitude) && !isNaN(point.longitude)
+          <>
+            <MapComponent
+              center={[-23.5505, -46.6333]}
+              zoom={12}
+              points={filteredPoints.filter(point => 
+                point.latitude && point.longitude && 
+                !isNaN(point.latitude) && !isNaN(point.longitude)
+              )}
+              onPointClick={setSelectedPoint}
+              onMapClick={handleMapClickForNewPoint}
+              centerOnPoint={centerOnPoint}
+              selectedLocation={selectedLocationForNewPoint}
+              isSelectionMode={isSelectingLocation}
+              style={{ height: '100%', width: '100%' }}
+            />
+
+            {/* Overlay de instrução quando está selecionando localização */}
+            {isSelectingLocation && (
+              <div className="location-selection-overlay">
+                <div className="location-selection-card">
+                  <h5 className="mb-3">
+                    <i className="fas fa-map-marker-alt me-2"></i>
+                    Selecione a Localização do Ponto
+                  </h5>
+                  <p className="mb-3">
+                    <i className="fas fa-mouse-pointer me-2"></i>
+                    Clique no mapa para escolher onde o ponto de coleta será localizado
+                  </p>
+                  <Button 
+                    variant="secondary" 
+                    size="sm"
+                    onClick={handleCancelLocationSelection}
+                  >
+                    <i className="fas fa-times me-2"></i>
+                    Cancelar
+                  </Button>
+                </div>
+              </div>
             )}
-            onPointClick={setSelectedPoint}
-            centerOnPoint={centerOnPoint}
-            style={{ height: '100%', width: '100%' }}
-          />
+          </>
         )}
 
         {/* Detalhes do ponto selecionado */}
@@ -668,9 +719,14 @@ const CollectionPoints = () => {
       {/* Modal para adicionar/editar ponto */}
       <CollectionPointModal
         show={showModal}
-        onHide={() => setShowModal(false)}
+        onHide={() => {
+          setShowModal(false);
+          setSelectedLocationForNewPoint(null);
+          setIsSelectingLocation(false);
+        }}
         onSave={handleSavePoint}
         editPoint={editingPoint}
+        preselectedLocation={selectedLocationForNewPoint}
         loading={saveLoading}
       />
 
