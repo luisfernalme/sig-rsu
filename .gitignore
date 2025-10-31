@@ -35,6 +35,16 @@ db.sqlite3-journal
 /static/
 backend/staticfiles/
 backend/logs/
+backend/media/
+
+# Python tooling caches
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.coverage
+coverage.xml
+htmlcov/
 
 # Node
 node_modules/
@@ -43,6 +53,9 @@ yarn-debug.log*
 yarn-error.log*
 .pnp/
 .pnp.js
+frontend/build/
+frontend/.env*
+!frontend/.env.example
 
 # IDE
 .vscode/
@@ -51,9 +64,12 @@ yarn-error.log*
 *.swo
 *~
 .DS_Store
+.history/
 
 # Docker
 docker-compose.override.yml
+*.tmp
+*.bak
 
 # Logs
 logs/
