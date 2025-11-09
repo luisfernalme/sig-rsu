@@ -10,6 +10,7 @@ import CollectionPoints from "./pages/CollectionPoints";
 import Reports from "./pages/Reports";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import Profile from "./pages/Profile";
 import { AuthProvider, useAuth } from "./services/authContext";
 
 // Componente para proteger rotas que requerem autenticação
@@ -144,6 +145,16 @@ function AppContent() {
           <ProtectedRoute>
             <ProtectedLayout>
               <Reports />
+            </ProtectedLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute>
+            <ProtectedLayout>
+              <Profile />
             </ProtectedLayout>
           </ProtectedRoute>
         }
