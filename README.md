@@ -95,7 +95,7 @@ O ambiente é composto por seis containers Docker:
 - **Autenticação:** Sistema completo de login/registro com tokens JWT e controle de acesso baseado em permissões (Visualizador, Operador, Administrador).
 - **Registro de Usuários:** Novos usuários podem se cadastrar diretamente pela interface web (`/register`).
 - **Gestão de Rotas:** Criação, edição e visualização de rotas de coleta em um mapa interativo (Leaflet), com otimização de percurso.
-- **Gestão de Veículos:** Cadastro e acompanhamento da frota de veículos.
+- **Gestão de Veículos:** Cadastro, edição, filtros por status e tipo, remoção e visualização de rastreamento (histórico GPS) com modais dedicados.
 - **Pontos de Coleta:** Mapeamento e gerenciamento dos pontos de coleta com upload de fotos.
 - **Histórico de Coletas:** Registro completo de todas as coletas realizadas.
 - **Relatórios:** Geração de relatórios e dashboards para análise de eficiência.
