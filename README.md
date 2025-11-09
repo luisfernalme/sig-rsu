@@ -33,9 +33,14 @@ Sistema web para gerenciamento da coleta de resíduos sólidos urbanos, com back
       ```
 
 3.  **Acesse os serviços:**
+
     - **Frontend:** `http://localhost:3000`
     - **Backend API:** `http://localhost:8000`
     - **Admin Django:** `http://localhost:8000/admin`
+
+4.  **Primeiro Acesso:**
+    - Acesse `http://localhost:3000/register` para criar sua conta
+    - Ou crie um superuser: `docker-compose exec backend python manage.py createsuperuser`
 
 ## Comandos Docker
 
@@ -87,10 +92,12 @@ O ambiente é composto por seis containers Docker:
 
 ## Funcionalidades Principais
 
-- **Autenticação:** Sistema de login com tokens JWT e controle de acesso baseado em permissões.
+- **Autenticação:** Sistema completo de login/registro com tokens JWT e controle de acesso baseado em permissões (Visualizador, Operador, Administrador).
+- **Registro de Usuários:** Novos usuários podem se cadastrar diretamente pela interface web (`/register`).
 - **Gestão de Rotas:** Criação, edição e visualização de rotas de coleta em um mapa interativo (Leaflet), com otimização de percurso.
 - **Gestão de Veículos:** Cadastro e acompanhamento da frota de veículos.
-- **Pontos de Coleta:** Mapeamento e gerenciamento dos pontos de coleta.
+- **Pontos de Coleta:** Mapeamento e gerenciamento dos pontos de coleta com upload de fotos.
+- **Histórico de Coletas:** Registro completo de todas as coletas realizadas.
 - **Relatórios:** Geração de relatórios e dashboards para análise de eficiência.
 - **API Pública:** Endpoints para consulta pública de informações, como horários de coleta.
 

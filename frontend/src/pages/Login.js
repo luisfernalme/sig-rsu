@@ -1,40 +1,52 @@
-import React, { useState } from 'react';
-import { Container, Row, Col, Card, Form, Button, Alert } from 'react-bootstrap';
-import { useAuth } from '../services/authContext';
+import React, { useState } from "react";
+import {
+  Container,
+  Row,
+  Col,
+  Card,
+  Form,
+  Button,
+  Alert,
+} from "react-bootstrap";
+import { Link } from "react-router-dom";
+import { useAuth } from "../services/authContext";
 
 const Login = () => {
   const [formData, setFormData] = useState({
-    email: '',
-    password: '',
+    email: "",
+    password: "",
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const { login } = useAuth();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    setError('');
+    setError("");
 
     const result = await login(formData.email, formData.password);
-    
+
     if (!result.success) {
       setError(result.error);
     }
-    
+
     setIsLoading(false);
   };
 
   return (
-    <Container fluid className="vh-100 d-flex align-items-center justify-content-center bg-light">
+    <Container
+      fluid
+      className="vh-100 d-flex align-items-center justify-content-center bg-light"
+    >
       <Row className="w-100">
         <Col xs={12} sm={8} md={6} lg={4} className="mx-auto">
           <Card className="shadow">
@@ -90,7 +102,11 @@ const Login = () => {
                 >
                   {isLoading ? (
                     <>
-                      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                      <span
+                        className="spinner-border spinner-border-sm me-2"
+                        role="status"
+                        aria-hidden="true"
+                      ></span>
                       Entrando...
                     </>
                   ) : (
@@ -102,7 +118,18 @@ const Login = () => {
                 </Button>
               </Form>
 
-              <div className="text-center mt-3">
+              <hr className="my-4" />
+
+              <div className="text-center mb-3">
+                <small className="text-muted">
+                  Não tem uma conta?{" "}
+                  <Link to="/register" className="text-decoration-none">
+                    <strong>Cadastre-se aqui</strong>
+                  </Link>
+                </small>
+              </div>
+
+              <div className="text-center">
                 <small className="text-muted">
                   Esqueceu sua senha? <a href="#reset">Clique aqui</a>
                 </small>
