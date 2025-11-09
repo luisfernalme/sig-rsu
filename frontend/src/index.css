@@ -5,6 +5,7 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
 }
 
 code {
@@ -15,6 +16,12 @@ code {
 /* Custom styles for the waste collection system */
 .navbar-brand {
   font-weight: bold;
+}
+
+/* Fix dropdown alignment - keep it simple */
+.navbar .dropdown-menu {
+  right: 0;
+  left: auto;
 }
 
 .map-container {

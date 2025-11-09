@@ -66,6 +66,7 @@ const Navigation = () => {
                 </>
               }
               id="user-dropdown"
+              align="end"
             >
               <LinkContainer to="/profile">
                 <NavDropdown.Item>
