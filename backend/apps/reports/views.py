@@ -301,8 +301,8 @@ class ReportsViewSet(viewsets.ViewSet):
             
             # Custo de manutenção
             maintenance_cost = vehicle.maintenances.filter(
-                completed_date__gte=since_date,
-                is_completed=True
+                is_completed=True,
+                actual_date__gte=since_date
             ).aggregate(total=Sum('cost'))['total'] or 0
             
             # Taxa de utilização (dias trabalhados / dias no período)

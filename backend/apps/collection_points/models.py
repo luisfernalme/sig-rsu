@@ -99,7 +99,7 @@ class CollectionRecord(models.Model):
     ]
     
     collection_point = models.ForeignKey(CollectionPoint, on_delete=models.CASCADE, related_name='collections')
-    route_execution = models.ForeignKey('routes.RouteExecution', on_delete=models.CASCADE, related_name='collections')
+    route_execution = models.ForeignKey('routes.RouteExecution', on_delete=models.CASCADE, related_name='collections', null=True, blank=True)
     
     collection_date = models.DateTimeField(verbose_name='Data/Hora da Coleta')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, verbose_name='Status')

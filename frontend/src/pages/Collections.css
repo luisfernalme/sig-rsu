@@ -1,0 +1,32 @@
+.status-badge {
+  font-size: 0.85rem;
+  padding: 0.35em 0.65em;
+  font-weight: 500;
+}
+
+.collections-card {
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.collections-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.collection-icon {
+  font-size: 2rem;
+  color: #6c757d;
+}
+
+.fw-bold {
+  font-weight: 600 !important;
+}
+
+.text-muted {
+  font-size: 0.875rem;
+}
+
+.mb-3 small {
+  display: block;
+  margin-bottom: 0.25rem;
+}

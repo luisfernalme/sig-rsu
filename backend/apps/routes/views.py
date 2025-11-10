@@ -3,7 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters
-from django.db.models import Count, Avg, Sum, Q
+from django.db.models import Count, Avg, Sum, Q, F, FloatField, ExpressionWrapper
 from datetime import date, datetime, timedelta
 from .models import Route, RouteSchedule, RouteExecution, RouteOptimization
 from .serializers import (
@@ -363,19 +363,26 @@ class RouteOptimizationViewSet(viewsets.ReadOnlyModelViewSet):
         """
         optimizations = RouteOptimization.objects.all()
         
+        total_savings_km = optimizations.aggregate(
+            total=Sum('distance_saved')
+        )['total'] or 0
+
+        avg_savings_percent = optimizations.filter(
+            original_distance__gt=0
+        ).aggregate(
+            avg=Avg(
+                ExpressionWrapper(
+                    F('distance_saved') * 100.0 / F('original_distance'),
+                    output_field=FloatField()
+                )
+            )
+        )['avg'] or 0
+
         stats = {
             'total_optimizations': optimizations.count(),
-            'total_savings_km': optimizations.aggregate(
-                total=Sum('savings_distance')
-            )['total'] or 0,
-            'avg_savings_percent': optimizations.extra(
-                select={
-                    'savings_percent': '(savings_distance / original_distance) * 100'
-                }
-            ).aggregate(
-                avg=Avg('savings_percent')
-            )['avg'] or 0,
-            'total_routes_optimized': optimizations.values('route').distinct().count()
+            'total_savings_km': float(total_savings_km),
+            'avg_savings_percent': float(avg_savings_percent or 0),
+            'total_routes_optimized': optimizations.values('original_route').distinct().count()
         }
         
         return Response(stats)

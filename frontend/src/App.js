@@ -7,7 +7,7 @@ import Dashboard from "./pages/Dashboard";
 import RoutesPage from "./pages/Routes";
 import Vehicles from "./pages/Vehicles";
 import CollectionPoints from "./pages/CollectionPoints";
-import Reports from "./pages/Reports";
+import Collections from "./pages/Collections";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Profile from "./pages/Profile";
@@ -140,11 +140,11 @@ function AppContent() {
         }
       />
       <Route
-        path="/reports"
+        path="/collections"
         element={
           <ProtectedRoute>
             <ProtectedLayout>
-              <Reports />
+              <Collections />
             </ProtectedLayout>
           </ProtectedRoute>
         }

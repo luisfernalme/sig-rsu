@@ -3,7 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters
-from django.db.models import Count, Q
+from django.db.models import Count, Q, Sum
 from datetime import date, timedelta
 from .models import Vehicle, VehicleGPSTracker, VehicleMaintenance
 from .serializers import (
@@ -244,7 +244,7 @@ class VehicleMaintenanceViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['vehicle', 'maintenance_type', 'is_completed']
     search_fields = ['description', 'technician', 'workshop']
-    ordering_fields = ['scheduled_date', 'completed_date', 'cost', 'created_at']
+    ordering_fields = ['scheduled_date', 'actual_date', 'cost', 'created_at']
     ordering = ['-created_at']
     
     @action(detail=False, methods=['get'])

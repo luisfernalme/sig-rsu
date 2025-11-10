@@ -39,28 +39,16 @@ class CollectionPointViewSet(viewsets.ModelViewSet):
     
     def create(self, request, *args, **kwargs):
         """
-        Override create to add detailed logging
+        Criação de ponto com validação padrão
         """
-        print("=== FRONTEND REQUEST DEBUG ===")
-        print(f"Request method: {request.method}")
-        print(f"Request data: {request.data}")
-        print(f"Request headers: {dict(request.headers)}")
-        print(f"User: {request.user}")
-        print(f"User authenticated: {request.user.is_authenticated}")
-        
         serializer = self.get_serializer(data=request.data)
-        if not serializer.is_valid():
-            print("=== VALIDATION ERRORS ===")
-            print(f"Errors: {serializer.errors}")
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
+        serializer.is_valid(raise_exception=True)
+
         try:
             self.perform_create(serializer)
-            print(f"=== SUCCESS: Created point ===")
             headers = self.get_success_headers(serializer.data)
             return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
         except Exception as e:
-            print(f"=== CREATE ERROR: {e} ===")
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
     
     def perform_create(self, serializer):
@@ -256,23 +244,13 @@ class CollectionPointViewSet(viewsets.ModelViewSet):
             return Response(serializer.data)
         
         elif request.method == 'POST':
-            print("=== PHOTO UPLOAD DEBUG ===")
-            print(f"Request data: {request.data}")
-            print(f"Request FILES: {request.FILES}")
-            print(f"Content-Type: {request.content_type}")
-            
             data = request.data.copy()
             data['collection_point'] = collection_point.id
-            
-            print(f"Data após copy: {data}")
-            
+
             serializer = CollectionPointPhotoSerializer(data=data, context={'request': request})
             if serializer.is_valid():
                 photo = serializer.save()
-                print(f"Photo saved successfully: {photo.id}")
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
-            
-            print(f"Validation errors: {serializer.errors}")
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 

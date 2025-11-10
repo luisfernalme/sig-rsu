@@ -145,14 +145,6 @@ const Vehicles = () => {
                 <i className="fas fa-plus me-2"></i>
                 Novo Veículo
               </Button>
-              <Button
-                variant="outline-secondary"
-                onClick={() => setRefreshFlag((f) => f + 1)}
-                disabled={loading}
-              >
-                <i className="fas fa-sync me-2"></i>
-                Atualizar
-              </Button>
             </div>
           </div>
         </Col>
@@ -336,25 +328,6 @@ const Vehicles = () => {
             </Card>
           </Col>
         ))}
-      </Row>
-
-      {/* Placeholder para estatísticas futuras */}
-      <Row className="mt-4">
-        <Col>
-          <Card>
-            <Card.Header>
-              <h5 className="mb-0">
-                <i className="fas fa-chart-bar me-2"></i>
-                Estatísticas (Em breve)
-              </h5>
-            </Card.Header>
-            <Card.Body>
-              <div className="text-muted small">
-                Integração futura: /vehicles/stats para visão geral de frota.
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
       </Row>
 
       <VehicleModal

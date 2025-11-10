@@ -4,7 +4,7 @@ from . import views
 
 router = DefaultRouter()
 router.register(r'collection-points', views.CollectionPointViewSet)
-router.register(r'collections', views.CollectionRecordViewSet)
+router.register(r'collection-records', views.CollectionRecordViewSet)
 router.register(r'waste-types', views.WasteTypeViewSet)
 router.register(r'point-waste-types', views.CollectionPointWasteTypeViewSet)
 router.register(r'photos', views.CollectionPointPhotoViewSet)

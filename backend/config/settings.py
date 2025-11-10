@@ -43,6 +43,7 @@ LOCAL_APPS = [
     'apps.routes',
     'apps.vehicles',
     'apps.collection_points',
+    'apps.collections',
     'apps.reports',
     'apps.public_api',
 ]

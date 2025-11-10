@@ -49,10 +49,10 @@ const Navigation = () => {
               </Nav.Link>
             </LinkContainer>
 
-            <LinkContainer to="/reports">
+            <LinkContainer to="/collections">
               <Nav.Link>
-                <i className="fas fa-chart-bar me-1"></i>
-                Relatórios
+                <i className="fas fa-clipboard-list me-1"></i>
+                Coletas
               </Nav.Link>
             </LinkContainer>
           </Nav>

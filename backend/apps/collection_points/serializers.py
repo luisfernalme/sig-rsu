@@ -256,13 +256,16 @@ class CollectionRecordSerializer(serializers.ModelSerializer):
         """
         Informações da execução da rota
         """
-        if obj.route_execution:
-            return {
-                'id': obj.route_execution.id,
-                'route_name': obj.route_execution.route.name,
-                'vehicle_plate': obj.route_execution.vehicle.license_plate,
-                'driver_name': obj.route_execution.driver.get_full_name()
-            }
+        try:
+            if hasattr(obj, 'route_execution') and obj.route_execution:
+                return {
+                    'id': obj.route_execution.id,
+                    'route_name': obj.route_execution.route.name,
+                    'vehicle_plate': obj.route_execution.vehicle.license_plate,
+                    'driver_name': obj.route_execution.driver.get_full_name()
+                }
+        except Exception:
+            pass
         return None
     
     def validate(self, attrs):

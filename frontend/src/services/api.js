@@ -1,20 +1,21 @@
-import axios from 'axios';
-import Cookies from 'js-cookie';
+import axios from "axios";
+import Cookies from "js-cookie";
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
+const API_BASE_URL =
+  process.env.REACT_APP_API_URL || "http://localhost:8000/api";
 
 // Configuração do axios
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
 });
 
 // Interceptor para adicionar token de autenticação
 api.interceptors.request.use(
   (config) => {
-    const token = Cookies.get('access_token');
+    const token = Cookies.get("access_token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -35,23 +36,26 @@ api.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        const refreshToken = Cookies.get('refresh_token');
+        const refreshToken = Cookies.get("refresh_token");
         if (refreshToken) {
-          const response = await axios.post(`${API_BASE_URL}/auth/token/refresh/`, {
-            refresh: refreshToken,
-          });
+          const response = await axios.post(
+            `${API_BASE_URL}/auth/token/refresh/`,
+            {
+              refresh: refreshToken,
+            }
+          );
 
           const { access } = response.data;
-          Cookies.set('access_token', access, { expires: 1 });
+          Cookies.set("access_token", access, { expires: 1 });
 
           originalRequest.headers.Authorization = `Bearer ${access}`;
           return api(originalRequest);
         }
       } catch (refreshError) {
         // Refresh token inválido, redirecionar para login
-        Cookies.remove('access_token');
-        Cookies.remove('refresh_token');
-        window.location.href = '/login';
+        Cookies.remove("access_token");
+        Cookies.remove("refresh_token");
+        window.location.href = "/login";
       }
     }
 
@@ -62,36 +66,36 @@ api.interceptors.response.use(
 // Serviços de autenticação
 export const authAPI = {
   login: async (email, password) => {
-    const response = await api.post('/auth/login/', { email, password });
+    const response = await api.post("/auth/login/", { email, password });
     return response.data;
   },
 
   register: async (userData) => {
-    const response = await api.post('/auth/register/', userData);
+    const response = await api.post("/auth/register/", userData);
     return response.data;
   },
 
   logout: async () => {
-    const refreshToken = Cookies.get('refresh_token');
+    const refreshToken = Cookies.get("refresh_token");
     if (refreshToken) {
-      await api.post('/auth/logout/', { refresh: refreshToken });
+      await api.post("/auth/logout/", { refresh: refreshToken });
     }
-    Cookies.remove('access_token');
-    Cookies.remove('refresh_token');
+    Cookies.remove("access_token");
+    Cookies.remove("refresh_token");
   },
 
   getProfile: async () => {
-    const response = await api.get('/auth/profile/');
+    const response = await api.get("/auth/profile/");
     return response.data;
   },
 
   updateProfile: async (userData) => {
-    const response = await api.put('/auth/profile/update/', userData);
+    const response = await api.put("/auth/profile/update/", userData);
     return response.data;
   },
 
   changePassword: async (passwords) => {
-    const response = await api.post('/auth/change-password/', passwords);
+    const response = await api.post("/auth/change-password/", passwords);
     return response.data;
   },
 };
@@ -99,7 +103,7 @@ export const authAPI = {
 // Serviços de rotas
 export const routesAPI = {
   getRoutes: async (params = {}) => {
-    const response = await api.get('/routes/', { params });
+    const response = await api.get("/routes/", { params });
     return response.data;
   },
 
@@ -109,7 +113,7 @@ export const routesAPI = {
   },
 
   createRoute: async (routeData) => {
-    const response = await api.post('/routes/', routeData);
+    const response = await api.post("/routes/", routeData);
     return response.data;
   },
 
@@ -132,7 +136,7 @@ export const routesAPI = {
 // Serviços de veículos
 export const vehiclesAPI = {
   getVehicles: async (params = {}) => {
-    const response = await api.get('/vehicles/', { params });
+    const response = await api.get("/vehicles/", { params });
     return response.data;
   },
 
@@ -142,7 +146,7 @@ export const vehiclesAPI = {
   },
 
   createVehicle: async (vehicleData) => {
-    const response = await api.post('/vehicles/', vehicleData);
+    const response = await api.post("/vehicles/", vehicleData);
     return response.data;
   },
 
@@ -165,7 +169,7 @@ export const vehiclesAPI = {
 // Serviços de pontos de coleta
 export const collectionPointsAPI = {
   getCollectionPoints: async (params = {}) => {
-    const response = await api.get('/collection-points/', { params });
+    const response = await api.get("/collection-points/", { params });
     return response.data;
   },
 
@@ -175,7 +179,7 @@ export const collectionPointsAPI = {
   },
 
   createCollectionPoint: async (pointData) => {
-    const response = await api.post('/collection-points/', pointData);
+    const response = await api.post("/collection-points/", pointData);
     return response.data;
   },
 
@@ -190,13 +194,19 @@ export const collectionPointsAPI = {
   },
 
   recordCollection: async (pointId, collectionData) => {
-    const response = await api.post(`/collection-points/${pointId}/collect/`, collectionData);
+    const response = await api.post(
+      `/collection-points/${pointId}/collect/`,
+      collectionData
+    );
     return response.data;
   },
 
   // Histórico de coletas
   getCollectionHistory: async (pointId, params = {}) => {
-    const response = await api.get(`/collection-points/${pointId}/collection_history/`, { params });
+    const response = await api.get(
+      `/collection-points/${pointId}/collection_history/`,
+      { params }
+    );
     return response.data;
   },
 
@@ -218,12 +228,16 @@ export const collectionPointsAPI = {
         formData.append(key, photoData[key]);
       }
     }
-    
-    const response = await api.post(`/collection-points/${pointId}/photos/`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+
+    const response = await api.post(
+      `/collection-points/${pointId}/photos/`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
     return response.data;
   },
 
@@ -241,30 +255,84 @@ export const collectionPointsAPI = {
 // Serviços de relatórios
 export const reportsAPI = {
   getDashboardStats: async () => {
-    const response = await api.get('/reports/dashboard/');
+    const response = await api.get("/reports/dashboard/");
     return response.data;
   },
 
   getCollectionReport: async (params = {}) => {
-    const response = await api.get('/reports/collections/', { params });
+    const response = await api.get("/reports/collections/", { params });
     return response.data;
   },
 
   getEfficiencyReport: async (params = {}) => {
-    const response = await api.get('/reports/efficiency/', { params });
+    const response = await api.get("/reports/efficiency/", { params });
     return response.data;
   },
 
   getCostReport: async (params = {}) => {
-    const response = await api.get('/reports/costs/', { params });
+    const response = await api.get("/reports/costs/", { params });
     return response.data;
   },
 
   exportReport: async (reportType, params = {}) => {
-    const response = await api.get(`/reports/export/${reportType}/`, {
-      params,
-      responseType: 'blob',
-    });
+    const today = new Date();
+    const defaultEnd = today.toISOString().slice(0, 10);
+    const startReference = new Date(today);
+    startReference.setDate(startReference.getDate() - 30);
+    const defaultStart = startReference.toISOString().slice(0, 10);
+
+    const payload = {
+      report_type: reportType,
+      format: params.format || "csv",
+      start_date: params.start_date || defaultStart,
+      end_date: params.end_date || defaultEnd,
+      filters: params.filters || {},
+    };
+
+    const response = await api.post("/reports/export/", payload);
+    return response.data;
+  },
+};
+
+// Serviços de coletas
+export const collectionsAPI = {
+  getCollections: async (params = {}) => {
+    const response = await api.get("/collections/", { params });
+    return response.data;
+  },
+
+  getCollection: async (id) => {
+    const response = await api.get(`/collections/${id}/`);
+    return response.data;
+  },
+
+  createCollection: async (collectionData) => {
+    const response = await api.post("/collections/", collectionData);
+    return response.data;
+  },
+
+  updateCollection: async (id, collectionData) => {
+    const response = await api.put(`/collections/${id}/`, collectionData);
+    return response.data;
+  },
+
+  deleteCollection: async (id) => {
+    const response = await api.delete(`/collections/${id}/`);
+    return response.data;
+  },
+
+  startCollection: async (id) => {
+    const response = await api.post(`/collections/${id}/start/`);
+    return response.data;
+  },
+
+  completeCollection: async (id) => {
+    const response = await api.post(`/collections/${id}/complete/`);
+    return response.data;
+  },
+
+  cancelCollection: async (id) => {
+    const response = await api.post(`/collections/${id}/cancel/`);
     return response.data;
   },
 };
@@ -284,7 +352,9 @@ export const publicAPI = {
   },
 
   getRouteInfo: async (routeId) => {
-    const response = await axios.get(`${API_BASE_URL}/public/routes/${routeId}/`);
+    const response = await axios.get(
+      `${API_BASE_URL}/public/routes/${routeId}/`
+    );
     return response.data;
   },
 };
