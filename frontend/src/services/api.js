@@ -166,6 +166,44 @@ export const vehiclesAPI = {
   },
 };
 
+// Serviços de motoristas
+export const driversAPI = {
+  getDrivers: async (params = {}) => {
+    const response = await api.get("/drivers/", { params });
+    return response.data;
+  },
+
+  getDriver: async (id) => {
+    const response = await api.get(`/drivers/${id}/`);
+    return response.data;
+  },
+
+  createDriver: async (driverData) => {
+    const response = await api.post("/drivers/", driverData);
+    return response.data;
+  },
+
+  updateDriver: async (id, driverData) => {
+    const response = await api.put(`/drivers/${id}/`, driverData);
+    return response.data;
+  },
+
+  deleteDriver: async (id) => {
+    const response = await api.delete(`/drivers/${id}/`);
+    return response.data;
+  },
+
+  getActiveDrivers: async () => {
+    const response = await api.get("/drivers/active/");
+    return response.data;
+  },
+
+  getExpiredLicenses: async () => {
+    const response = await api.get("/drivers/expired_licenses/");
+    return response.data;
+  },
+};
+
 // Serviços de pontos de coleta
 export const collectionPointsAPI = {
   getCollectionPoints: async (params = {}) => {

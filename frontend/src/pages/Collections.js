@@ -3,15 +3,21 @@ import {
   Container,
   Row,
   Col,
-  Card,
   Button,
   Badge,
   Spinner,
   Alert,
   Form,
   InputGroup,
+  Table,
+  Dropdown,
 } from "react-bootstrap";
-import { collectionsAPI, routesAPI, vehiclesAPI } from "../services/api";
+import {
+  collectionsAPI,
+  routesAPI,
+  vehiclesAPI,
+  driversAPI,
+} from "../services/api";
 import CollectionModal from "../components/CollectionModal";
 import CollectionDetailModal from "../components/CollectionDetailModal";
 import toast from "react-hot-toast";
@@ -21,6 +27,7 @@ const Collections = () => {
   const [collections, setCollections] = useState([]);
   const [routes, setRoutes] = useState([]);
   const [vehicles, setVehicles] = useState([]);
+  const [drivers, setDrivers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -41,6 +48,7 @@ const Collections = () => {
     fetchCollections();
     fetchRoutes();
     fetchVehicles();
+    fetchDrivers();
   }, []);
 
   const fetchCollections = async () => {
@@ -76,8 +84,22 @@ const Collections = () => {
     }
   };
 
+  const fetchDrivers = async () => {
+    try {
+      const data = await driversAPI.getDrivers();
+      setDrivers(Array.isArray(data) ? data : data.results || []);
+    } catch (err) {
+      console.error("Erro ao buscar motoristas:", err);
+    }
+  };
+
   const handleCreateCollection = () => {
     setSelectedCollection(null);
+    setShowCollectionModal(true);
+  };
+
+  const handleEditCollection = (collection) => {
+    setSelectedCollection(collection);
     setShowCollectionModal(true);
   };
 
@@ -307,19 +329,17 @@ const Collections = () => {
       {collections.length === 0 ? (
         <Row>
           <Col>
-            <Card className="text-center py-5">
-              <Card.Body>
-                <i className="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
-                <h5>Nenhuma coleta cadastrada</h5>
-                <p className="text-muted">
-                  Comece criando o primeiro registro de coleta
-                </p>
-                <Button variant="primary" onClick={handleCreateCollection}>
-                  <i className="fas fa-plus me-2"></i>
-                  Criar Primeira Coleta
-                </Button>
-              </Card.Body>
-            </Card>
+            <Alert variant="info" className="text-center py-5">
+              <i className="fas fa-clipboard-list fa-3x text-muted mb-3 d-block"></i>
+              <h5>Nenhuma coleta cadastrada</h5>
+              <p className="text-muted">
+                Comece criando o primeiro registro de coleta
+              </p>
+              <Button variant="primary" onClick={handleCreateCollection}>
+                <i className="fas fa-plus me-2"></i>
+                Criar Primeira Coleta
+              </Button>
+            </Alert>
           </Col>
         </Row>
       ) : filteredCollections.length === 0 ? (
@@ -333,143 +353,143 @@ const Collections = () => {
         </Row>
       ) : (
         <Row>
-          {filteredCollections.map((collection) => (
-            <Col xs={12} lg={6} xl={4} key={collection.id} className="mb-4">
-              <Card className="h-100">
-                <Card.Header className="d-flex justify-content-between align-items-center">
-                  <h5 className="mb-0">Coleta #{collection.id}</h5>
-                  {getStatusBadge(collection.status)}
-                </Card.Header>
-                <Card.Body>
-                  <div className="mb-3">
-                    <small className="text-muted">
-                      <i className="fas fa-route me-1"></i>
-                      Rota
-                    </small>
-                    <div className="fw-bold">
-                      {collection.route_name || "N/A"}
-                    </div>
-                  </div>
-
-                  <Row className="mb-3">
-                    <Col xs={6}>
-                      <small className="text-muted">
-                        <i className="fas fa-truck me-1"></i>
-                        Veículo
-                      </small>
-                      <div className="fw-bold">
+          <Col>
+            <div className="table-responsive">
+              <Table striped bordered hover>
+                <thead className="table-light">
+                  <tr>
+                    <th style={{ width: "80px" }}>ID</th>
+                    <th>Rota</th>
+                    <th>Veículo</th>
+                    <th>Motorista</th>
+                    <th style={{ width: "120px" }}>Data</th>
+                    <th style={{ width: "100px" }}>Horário</th>
+                    <th style={{ width: "130px" }}>Status</th>
+                    <th style={{ width: "100px" }}>Peso (kg)</th>
+                    <th style={{ width: "150px" }} className="text-center">
+                      Ações
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredCollections.map((collection) => (
+                    <tr key={collection.id}>
+                      <td className="text-center fw-bold">#{collection.id}</td>
+                      <td>
+                        <i className="fas fa-route me-2 text-muted"></i>
+                        {collection.route_name || "N/A"}
+                      </td>
+                      <td>
+                        <i className="fas fa-truck me-2 text-muted"></i>
                         {collection.vehicle_plate || "N/A"}
-                      </div>
-                    </Col>
-                    <Col xs={6}>
-                      <small className="text-muted">
-                        <i className="fas fa-user me-1"></i>
-                        Motorista
-                      </small>
-                      <div className="fw-bold">
-                        {collection.driver_name || "N/A"}
-                      </div>
-                    </Col>
-                  </Row>
-
-                  <Row className="mb-3">
-                    <Col xs={6}>
-                      <small className="text-muted">
-                        <i className="fas fa-calendar me-1"></i>
-                        Data Agendada
-                      </small>
-                      <div className="fw-bold">
+                      </td>
+                      <td>
+                        <i className="fas fa-user me-2 text-muted"></i>
+                        {collection.driver_name_display ||
+                          collection.driver_name ||
+                          "N/A"}
+                      </td>
+                      <td>
                         {collection.scheduled_date
                           ? new Date(
                               collection.scheduled_date
                             ).toLocaleDateString("pt-BR")
                           : "N/A"}
-                      </div>
-                    </Col>
-                    <Col xs={6}>
-                      <small className="text-muted">
-                        <i className="fas fa-clock me-1"></i>
-                        Horário
-                      </small>
-                      <div className="fw-bold">
-                        {collection.scheduled_time || "N/A"}
-                      </div>
-                    </Col>
-                  </Row>
+                      </td>
+                      <td>{collection.scheduled_time || "N/A"}</td>
+                      <td>{getStatusBadge(collection.status)}</td>
+                      <td className="text-end">
+                        {collection.waste_collected_weight ||
+                          collection.total_weight ||
+                          0}
+                      </td>
+                      <td>
+                        <div className="d-flex gap-1 justify-content-center">
+                          <Button
+                            variant="outline-info"
+                            size="sm"
+                            title="Ver detalhes"
+                            onClick={() => handleViewDetails(collection)}
+                          >
+                            <i className="fas fa-eye"></i>
+                          </Button>
 
-                  {collection.status === "completed" && (
-                    <Row className="mb-3">
-                      <Col xs={6}>
-                        <small className="text-muted">
-                          <i className="fas fa-weight me-1"></i>
-                          Total Coletado
-                        </small>
-                        <div className="fw-bold">
-                          {collection.total_weight || 0} kg
+                          {collection.status === "pending" && (
+                            <>
+                              <Button
+                                variant="outline-primary"
+                                size="sm"
+                                title="Editar"
+                                onClick={() => handleEditCollection(collection)}
+                              >
+                                <i className="fas fa-edit"></i>
+                              </Button>
+                              <Button
+                                variant="outline-success"
+                                size="sm"
+                                title="Iniciar coleta"
+                                onClick={() =>
+                                  handleStartCollection(collection.id)
+                                }
+                              >
+                                <i className="fas fa-play"></i>
+                              </Button>
+                            </>
+                          )}
+
+                          {collection.status === "in_progress" && (
+                            <Button
+                              variant="outline-success"
+                              size="sm"
+                              title="Finalizar coleta"
+                              onClick={() =>
+                                handleCompleteCollection(collection.id)
+                              }
+                            >
+                              <i className="fas fa-check"></i>
+                            </Button>
+                          )}
+
+                          {collection.status === "completed" && (
+                            <Button
+                              variant="outline-primary"
+                              size="sm"
+                              title="Editar"
+                              onClick={() => handleEditCollection(collection)}
+                            >
+                              <i className="fas fa-edit"></i>
+                            </Button>
+                          )}
+
+                          {(collection.status === "pending" ||
+                            collection.status === "cancelled") && (
+                            <Button
+                              variant="outline-danger"
+                              size="sm"
+                              title="Excluir"
+                              onClick={() =>
+                                handleDeleteCollection(collection.id)
+                              }
+                            >
+                              <i className="fas fa-trash"></i>
+                            </Button>
+                          )}
                         </div>
-                      </Col>
-                      <Col xs={6}>
-                        <small className="text-muted">
-                          <i className="fas fa-map-marker-alt me-1"></i>
-                          Pontos
-                        </small>
-                        <div className="fw-bold">
-                          {collection.points_completed || 0}/
-                          {collection.total_points || 0}
-                        </div>
-                      </Col>
-                    </Row>
-                  )}
-                </Card.Body>
-                <Card.Footer className="d-flex gap-2 flex-wrap">
-                  <Button
-                    variant="outline-info"
-                    size="sm"
-                    className="flex-fill"
-                    onClick={() => handleViewDetails(collection)}
-                  >
-                    <i className="fas fa-eye me-1"></i>
-                    Detalhes
-                  </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </Table>
+            </div>
 
-                  {collection.status === "pending" && (
-                    <Button
-                      variant="outline-success"
-                      size="sm"
-                      className="flex-fill"
-                      onClick={() => handleStartCollection(collection.id)}
-                    >
-                      <i className="fas fa-play me-1"></i>
-                      Iniciar
-                    </Button>
-                  )}
-
-                  {collection.status === "in_progress" && (
-                    <Button
-                      variant="outline-primary"
-                      size="sm"
-                      className="flex-fill"
-                      onClick={() => handleCompleteCollection(collection.id)}
-                    >
-                      <i className="fas fa-check me-1"></i>
-                      Finalizar
-                    </Button>
-                  )}
-
-                  {(collection.status === "pending" ||
-                    collection.status === "cancelled") && (
-                    <Button
-                      variant="outline-danger"
-                      size="sm"
-                      onClick={() => handleDeleteCollection(collection.id)}
-                    >
-                      <i className="fas fa-trash"></i>
-                    </Button>
-                  )}
-                </Card.Footer>
-              </Card>
-            </Col>
-          ))}
+            {/* Informações adicionais */}
+            <div className="d-flex justify-content-between align-items-center mt-3">
+              <span className="text-muted">
+                Mostrando {filteredCollections.length} de {collections.length}{" "}
+                coleta(s)
+              </span>
+            </div>
+          </Col>
         </Row>
       )}
 
@@ -481,6 +501,7 @@ const Collections = () => {
         collection={selectedCollection}
         routes={routes}
         vehicles={vehicles}
+        drivers={drivers}
       />
 
       <CollectionDetailModal

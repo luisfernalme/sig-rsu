@@ -5,11 +5,43 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters
 from django.db.models import Count, Q, Sum
 from datetime import date, timedelta
-from .models import Vehicle, VehicleGPSTracker, VehicleMaintenance
+from .models import Driver, Vehicle, VehicleGPSTracker, VehicleMaintenance
 from .serializers import (
-    VehicleSerializer, VehicleDetailSerializer, VehicleGPSTrackerSerializer,
+    DriverSerializer, VehicleSerializer, VehicleDetailSerializer, VehicleGPSTrackerSerializer,
     VehicleMaintenanceSerializer, VehicleStatsSerializer
 )
+
+
+class DriverViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet completo para motoristas
+    """
+    queryset = Driver.objects.all()
+    serializer_class = DriverSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['status', 'license_category']
+    search_fields = ['name', 'cpf', 'license_number', 'phone']
+    ordering_fields = ['name', 'hire_date', 'created_at']
+    ordering = ['name']
+    
+    @action(detail=False, methods=['get'])
+    def active(self, request):
+        """Retorna apenas motoristas ativos"""
+        active_drivers = self.queryset.filter(status='active')
+        serializer = self.get_serializer(active_drivers, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'])
+    def expired_licenses(self, request):
+        """Retorna motoristas com CNH vencida ou próxima do vencimento"""
+        thirty_days = date.today() + timedelta(days=30)
+        drivers = self.queryset.filter(
+            Q(license_expiration__lte=thirty_days) &
+            Q(status='active')
+        ).order_by('license_expiration')
+        serializer = self.get_serializer(drivers, many=True)
+        return Response(serializer.data)
 
 
 class VehicleViewSet(viewsets.ModelViewSet):

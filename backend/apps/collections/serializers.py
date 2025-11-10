@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from .models import Collection, CollectionItem
 from apps.routes.models import Route
-from apps.vehicles.models import Vehicle
+from apps.vehicles.models import Vehicle, Driver
 
 
 class CollectionItemSerializer(serializers.ModelSerializer):
@@ -21,6 +21,7 @@ class CollectionItemSerializer(serializers.ModelSerializer):
 class CollectionSerializer(serializers.ModelSerializer):
     route_name = serializers.CharField(source='route.name', read_only=True)
     vehicle_plate = serializers.CharField(source='vehicle.license_plate', read_only=True)
+    driver_name_display = serializers.SerializerMethodField(read_only=True)
     duration = serializers.ReadOnlyField()
     points_completed = serializers.ReadOnlyField()
     total_points = serializers.ReadOnlyField()
@@ -30,12 +31,21 @@ class CollectionSerializer(serializers.ModelSerializer):
         model = Collection
         fields = [
             'id', 'route', 'route_name', 'vehicle', 'vehicle_plate',
-            'driver_name', 'status', 'scheduled_date', 'scheduled_time',
-            'start_time', 'end_time', 'total_weight', 'distance_traveled',
-            'fuel_consumed', 'notes', 'duration', 'points_completed',
-            'total_points', 'collection_items', 'created_at', 'updated_at'
+            'driver', 'driver_name', 'driver_name_display', 'status',
+            'scheduled_date', 'scheduled_time', 'start_time', 'end_time',
+            'actual_start_time', 'actual_end_time',
+            'total_weight', 'waste_collected_weight', 'waste_collected_volume',
+            'distance_traveled', 'fuel_consumed', 'notes', 'duration',
+            'points_completed', 'total_points', 'collection_items',
+            'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'start_time', 'end_time', 'created_at', 'updated_at']
+    
+    def get_driver_name_display(self, obj):
+        """Retorna o nome do motorista do FK ou do campo legado"""
+        if obj.driver:
+            return obj.driver.name
+        return obj.driver_name or "—"
     
     def validate(self, data):
         """Validações customizadas"""
@@ -51,6 +61,13 @@ class CollectionSerializer(serializers.ModelSerializer):
         if vehicle and vehicle.status != 'active':
             raise serializers.ValidationError({
                 'vehicle': 'O veículo selecionado não está disponível.'
+            })
+        
+        # Validar motorista se fornecido
+        driver = data.get('driver')
+        if driver and driver.status != 'active':
+            raise serializers.ValidationError({
+                'driver': 'O motorista selecionado não está ativo.'
             })
         
         return data
@@ -81,8 +98,10 @@ class CollectionCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Collection
         fields = [
-            'route', 'vehicle', 'driver_name', 'scheduled_date',
-            'scheduled_time', 'notes'
+            'route', 'vehicle', 'driver', 'driver_name', 'scheduled_date',
+            'scheduled_time', 'actual_start_time', 'actual_end_time',
+            'waste_collected_weight', 'waste_collected_volume',
+            'status', 'notes'
         ]
     
     def validate(self, data):
@@ -99,6 +118,13 @@ class CollectionCreateSerializer(serializers.ModelSerializer):
         if vehicle and vehicle.status != 'active':
             raise serializers.ValidationError({
                 'vehicle': 'O veículo selecionado não está disponível.'
+            })
+        
+        # Validar motorista se fornecido
+        driver = data.get('driver')
+        if driver and driver.status != 'active':
+            raise serializers.ValidationError({
+                'driver': 'O motorista selecionado não está ativo.'
             })
         
         return data

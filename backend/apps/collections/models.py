@@ -1,7 +1,7 @@
 from django.db import models
 from django.core.validators import MinValueValidator
 from apps.routes.models import Route
-from apps.vehicles.models import Vehicle
+from apps.vehicles.models import Vehicle, Driver
 from apps.collection_points.models import CollectionPoint
 
 
@@ -28,9 +28,17 @@ class Collection(models.Model):
         related_name='collections',
         verbose_name='Veículo'
     )
+    driver = models.ForeignKey(
+        Driver,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='collections',
+        verbose_name='Motorista'
+    )
     
     # Informações da coleta
-    driver_name = models.CharField(max_length=200, verbose_name='Nome do Motorista')
+    driver_name = models.CharField(max_length=200, blank=True, verbose_name='Nome do Motorista (legado)')
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
@@ -44,6 +52,10 @@ class Collection(models.Model):
     start_time = models.DateTimeField(null=True, blank=True, verbose_name='Hora de Início')
     end_time = models.DateTimeField(null=True, blank=True, verbose_name='Hora de Término')
     
+    # Horários reais (para coletas já realizadas)
+    actual_start_time = models.TimeField(null=True, blank=True, verbose_name='Horário Real de Início')
+    actual_end_time = models.TimeField(null=True, blank=True, verbose_name='Horário Real de Término')
+    
     # Métricas
     total_weight = models.DecimalField(
         max_digits=10,
@@ -51,6 +63,22 @@ class Collection(models.Model):
         default=0,
         validators=[MinValueValidator(0)],
         verbose_name='Peso Total Coletado (kg)'
+    )
+    waste_collected_weight = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(0)],
+        verbose_name='Peso Coletado Informado (kg)'
+    )
+    waste_collected_volume = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(0)],
+        verbose_name='Volume Coletado (m³)'
     )
     distance_traveled = models.DecimalField(
         max_digits=10,

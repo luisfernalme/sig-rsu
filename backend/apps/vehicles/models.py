@@ -1,7 +1,75 @@
 from django.db import models
 from django.contrib.auth import get_user_model
+from django.core.validators import RegexValidator
 
 User = get_user_model()
+
+
+class Driver(models.Model):
+    """
+    Modelo para motoristas
+    """
+    STATUS_CHOICES = [
+        ('active', 'Ativo'),
+        ('on_leave', 'Afastado'),
+        ('inactive', 'Inativo'),
+    ]
+    
+    LICENSE_CATEGORY_CHOICES = [
+        ('B', 'Categoria B'),
+        ('C', 'Categoria C'),
+        ('D', 'Categoria D'),
+        ('E', 'Categoria E'),
+    ]
+    
+    # Informações pessoais
+    name = models.CharField(max_length=200, verbose_name='Nome Completo')
+    cpf = models.CharField(
+        max_length=14,
+        unique=True,
+        verbose_name='CPF',
+        validators=[RegexValidator(regex=r'^\d{3}\.\d{3}\.\d{3}-\d{2}$', message='CPF deve estar no formato: 000.000.000-00')]
+    )
+    phone = models.CharField(max_length=20, blank=True, verbose_name='Telefone')
+    email = models.EmailField(blank=True, verbose_name='Email')
+    birth_date = models.DateField(null=True, blank=True, verbose_name='Data de Nascimento')
+    
+    # Habilitação
+    license_number = models.CharField(max_length=20, unique=True, verbose_name='Número da CNH')
+    license_category = models.CharField(max_length=2, choices=LICENSE_CATEGORY_CHOICES, verbose_name='Categoria da CNH')
+    license_expiration = models.DateField(verbose_name='Validade da CNH')
+    
+    # Informações profissionais
+    hire_date = models.DateField(verbose_name='Data de Contratação')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active', verbose_name='Status')
+    
+    # Endereço
+    address = models.CharField(max_length=200, blank=True, verbose_name='Endereço')
+    city = models.CharField(max_length=100, blank=True, verbose_name='Cidade')
+    state = models.CharField(max_length=2, blank=True, verbose_name='Estado')
+    zip_code = models.CharField(max_length=9, blank=True, verbose_name='CEP')
+    
+    # Observações
+    notes = models.TextField(blank=True, verbose_name='Observações')
+    
+    # Metadados
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'drivers'
+        verbose_name = 'Motorista'
+        verbose_name_plural = 'Motoristas'
+        ordering = ['name']
+    
+    def __str__(self):
+        return f"{self.name} - CNH: {self.license_number}"
+    
+    @property
+    def is_license_valid(self):
+        """Verifica se a CNH está válida"""
+        from datetime import date
+        return self.license_expiration > date.today()
 
 
 class Vehicle(models.Model):

@@ -1,8 +1,54 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from .models import Vehicle, VehicleGPSTracker, VehicleMaintenance
+from .models import Driver, Vehicle, VehicleGPSTracker, VehicleMaintenance
 
 User = get_user_model()
+
+
+class DriverSerializer(serializers.ModelSerializer):
+    """
+    Serializer para motoristas
+    """
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    license_category_display = serializers.CharField(source='get_license_category_display', read_only=True)
+    is_license_valid = serializers.ReadOnlyField()
+    
+    class Meta:
+        model = Driver
+        fields = [
+            'id', 'name', 'cpf', 'phone', 'email', 'birth_date',
+            'license_number', 'license_category', 'license_category_display',
+            'license_expiration', 'is_license_valid', 'hire_date', 'status',
+            'status_display', 'address', 'city', 'state', 'zip_code',
+            'notes', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+    
+    def validate_cpf(self, value):
+        """Validação de CPF"""
+        instance = getattr(self, 'instance', None)
+        if Driver.objects.filter(cpf=value).exclude(
+            id=instance.id if instance else None
+        ).exists():
+            raise serializers.ValidationError("Já existe um motorista com este CPF.")
+        return value
+    
+    def validate_license_number(self, value):
+        """Validação de CNH"""
+        instance = getattr(self, 'instance', None)
+        if Driver.objects.filter(license_number=value).exclude(
+            id=instance.id if instance else None
+        ).exists():
+            raise serializers.ValidationError("Já existe um motorista com este número de CNH.")
+        return value
+    
+    def validate_license_expiration(self, value):
+        """Validação de validade da CNH"""
+        from datetime import date
+        # Permitir CNH vencida ao cadastrar, mas avisar no frontend
+        # if value < date.today():
+        #     raise serializers.ValidationError("A CNH não pode estar vencida.")
+        return value
 
 
 class VehicleSerializer(serializers.ModelSerializer):
