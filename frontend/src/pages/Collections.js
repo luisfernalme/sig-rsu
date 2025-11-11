@@ -153,7 +153,15 @@ const Collections = () => {
   };
 
   const handleDeleteCollection = async (collectionId) => {
-    if (window.confirm("Tem certeza que deseja excluir esta coleta?")) {
+    // Encontrar a coleta para verificar o status
+    const collection = collections.find((c) => c.id === collectionId);
+    const isCompleted = collection?.status === "completed";
+
+    const confirmMessage = isCompleted
+      ? "Esta é uma coleta já realizada. Tem certeza que deseja excluí-la? Esta ação não pode ser desfeita."
+      : "Tem certeza que deseja excluir esta coleta?";
+
+    if (window.confirm(confirmMessage)) {
       try {
         await collectionsAPI.deleteCollection(collectionId);
         toast.success("Coleta excluída com sucesso!");
@@ -462,7 +470,8 @@ const Collections = () => {
                           )}
 
                           {(collection.status === "pending" ||
-                            collection.status === "cancelled") && (
+                            collection.status === "cancelled" ||
+                            collection.status === "completed") && (
                             <Button
                               variant="outline-danger"
                               size="sm"

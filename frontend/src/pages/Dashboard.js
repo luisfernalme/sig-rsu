@@ -1,6 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { Row, Col, Card, Container, Badge, ListGroup } from 'react-bootstrap';
-import { Line, Doughnut, Bar } from 'react-chartjs-2';
+import React, { useState, useEffect } from "react";
+import {
+  Row,
+  Col,
+  Card,
+  Container,
+  Badge,
+  ListGroup,
+  Spinner,
+  Table,
+} from "react-bootstrap";
+import { Line, Doughnut, Bar } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -12,9 +21,23 @@ import {
   Legend,
   ArcElement,
   BarElement,
-} from 'chart.js';
-import { reportsAPI } from '../services/api';
-import { format, parseISO } from 'date-fns';
+} from "chart.js";
+import {
+  routesAPI,
+  vehiclesAPI,
+  driversAPI,
+  collectionPointsAPI,
+  collectionsAPI,
+} from "../services/api";
+import {
+  format,
+  parseISO,
+  startOfWeek,
+  endOfWeek,
+  isToday,
+  isThisWeek,
+  subDays,
+} from "date-fns";
 
 // Registrar componentes do Chart.js
 ChartJS.register(
@@ -30,128 +53,293 @@ ChartJS.register(
 );
 
 const Dashboard = () => {
+  const [loading, setLoading] = useState(true);
+  const [routes, setRoutes] = useState([]);
+  const [vehicles, setVehicles] = useState([]);
+  const [drivers, setDrivers] = useState([]);
+  const [collectionPoints, setCollectionPoints] = useState([]);
+  const [collections, setCollections] = useState([]);
   const [stats, setStats] = useState({
     totalRoutes: 0,
     activeRoutes: 0,
     totalVehicles: 0,
     activeVehicles: 0,
+    totalDrivers: 0,
+    activeDrivers: 0,
     totalCollectionPoints: 0,
-    fullCollectionPoints: 0,
     collectionsToday: 0,
-    executionsToday: 0,
-    wasteCollectedToday: 0,
+    collectionsCompleted: 0,
+    collectionsInProgress: 0,
+    collectionsPending: 0,
     collectionsWeek: 0,
     wasteCollectedWeek: 0,
-    distanceTraveledWeek: 0,
-    vehiclesMaintenanceDue: 0,
-    pointsNeedCollection: 0,
-    overdueExecutions: 0,
   });
   const [collectionsChartData, setCollectionsChartData] = useState(null);
-  const [wasteTypesData, setWasteTypesData] = useState(null);
-  const [efficiencyData, setEfficiencyData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [statusChartData, setStatusChartData] = useState(null);
+  const [routeChartData, setRouteChartData] = useState(null);
+  const [recentCollections, setRecentCollections] = useState([]);
 
   useEffect(() => {
-    const fetchAll = async () => {
+    fetchAllData();
+  }, []);
+
+  const fetchAllData = async () => {
+    try {
+      setLoading(true);
+
+      // Buscar dados de todas as APIs
+      const [
+        routesData,
+        vehiclesData,
+        driversData,
+        pointsData,
+        collectionsData,
+      ] = await Promise.all([
+        routesAPI.getRoutes(),
+        vehiclesAPI.getVehicles(),
+        driversAPI.getDrivers(),
+        collectionPointsAPI.getCollectionPoints(),
+        collectionsAPI.getCollections(),
+      ]);
+
+      // Extrair arrays
+      const routesList = Array.isArray(routesData)
+        ? routesData
+        : routesData.results || [];
+      const vehiclesList = Array.isArray(vehiclesData)
+        ? vehiclesData
+        : vehiclesData.results || [];
+      const driversList = Array.isArray(driversData)
+        ? driversData
+        : driversData.results || [];
+      const pointsList = Array.isArray(pointsData)
+        ? pointsData
+        : pointsData.results || [];
+      const collectionsList = Array.isArray(collectionsData)
+        ? collectionsData
+        : collectionsData.results || [];
+
+      setRoutes(routesList);
+      setVehicles(vehiclesList);
+      setDrivers(driversList);
+      setCollectionPoints(pointsList);
+      setCollections(collectionsList);
+
+      // Calcular estatísticas
+      calculateStats(
+        routesList,
+        vehiclesList,
+        driversList,
+        pointsList,
+        collectionsList
+      );
+
+      // Preparar dados dos gráficos
+      prepareChartData(collectionsList);
+
+      // Coletas recentes (últimas 5)
+      const recent = [...collectionsList]
+        .sort((a, b) => new Date(b.scheduled_date) - new Date(a.scheduled_date))
+        .slice(0, 5);
+      setRecentCollections(recent);
+
+      setLoading(false);
+    } catch (error) {
+      console.error("Erro ao carregar dados do dashboard:", error);
+      setLoading(false);
+    }
+  };
+
+  const calculateStats = (
+    routesList,
+    vehiclesList,
+    driversList,
+    pointsList,
+    collectionsList
+  ) => {
+    // Rotas
+    const totalRoutes = routesList.length;
+    const activeRoutes = routesList.filter((r) => r.status === "active").length;
+
+    // Veículos
+    const totalVehicles = vehiclesList.length;
+    const activeVehicles = vehiclesList.filter(
+      (v) => v.status === "active"
+    ).length;
+
+    // Motoristas
+    const totalDrivers = driversList.length;
+    const activeDrivers = driversList.filter(
+      (d) => d.status === "active"
+    ).length;
+
+    // Pontos de coleta
+    const totalCollectionPoints = pointsList.length;
+
+    // Coletas por status
+    const collectionsCompleted = collectionsList.filter(
+      (c) => c.status === "completed"
+    ).length;
+    const collectionsInProgress = collectionsList.filter(
+      (c) => c.status === "in_progress"
+    ).length;
+    const collectionsPending = collectionsList.filter(
+      (c) => c.status === "pending"
+    ).length;
+
+    // Coletas de hoje
+    const collectionsToday = collectionsList.filter((c) => {
       try {
-        setLoading(true);
-        const [dashboardData, collectionsReport, efficiencyReport] = await Promise.all([
-          reportsAPI.getDashboardStats(),
-          reportsAPI.getCollectionReport(),
-          reportsAPI.getEfficiencyReport(),
-        ]);
-
-        // Mapear estatísticas para os campos do dashboard
-        setStats({
-          totalRoutes: dashboardData.total_routes || 0,
-          activeRoutes: dashboardData.active_routes || 0,
-          totalVehicles: dashboardData.total_vehicles || 0,
-          activeVehicles: dashboardData.active_vehicles || 0,
-          totalCollectionPoints: dashboardData.total_collection_points || 0,
-          fullCollectionPoints: dashboardData.full_collection_points || 0,
-          collectionsToday: dashboardData.collections_today || 0,
-          executionsToday: dashboardData.executions_today || 0,
-          wasteCollectedToday: dashboardData.waste_collected_today || 0,
-          collectionsWeek: dashboardData.collections_week || 0,
-          wasteCollectedWeek: dashboardData.waste_collected_week || 0,
-          distanceTraveledWeek: dashboardData.distance_traveled_week || 0,
-          vehiclesMaintenanceDue: dashboardData.vehicles_maintenance_due || 0,
-          pointsNeedCollection: dashboardData.points_need_collection || 0,
-          overdueExecutions: dashboardData.overdue_executions || 0,
-        });
-
-        // Gráfico de coletas diárias (últimos 30 dias do endpoint)
-        const daily = (collectionsReport?.daily_collections || []).slice(-30);
-        const lineData = {
-          labels: daily.map((d) => {
-            try {
-              return format(parseISO(d.date), 'dd/MM');
-            } catch {
-              return d.date;
-            }
-          }),
-          datasets: [
-            {
-              label: 'Coletas por dia',
-              data: daily.map((d) => d.count || 0),
-              fill: false,
-              borderColor: 'rgb(75, 192, 192)',
-              backgroundColor: 'rgba(75, 192, 192, 0.2)',
-              tension: 0.15,
-            },
-          ],
-        };
-        setCollectionsChartData(lineData);
-
-        // Gráfico de tipos de coleta (por tipo de ponto)
-        const typesObj = collectionsReport?.collections_by_type || {};
-        const doughnutData = {
-          labels: Object.keys(typesObj),
-          datasets: [
-            {
-              data: Object.values(typesObj),
-              backgroundColor: ['#0d6efd', '#198754', '#ffc107', '#dc3545', '#6610f2', '#20c997'],
-            },
-          ],
-        };
-        setWasteTypesData(doughnutData);
-
-        // Eficiência por rota (taxa de conclusão)
-        const effByRoute = (efficiencyReport?.efficiency_by_route || [])
-          .sort((a, b) => (b.total_executions || 0) - (a.total_executions || 0))
-          .slice(0, 8);
-        const barData = {
-          labels: effByRoute.map((r) => r.route_name || `Rota ${r.route_id}`),
-          datasets: [
-            {
-              label: 'Taxa de conclusão (%)',
-              data: effByRoute.map((r) => Math.round((r.completion_rate || 0) * 10) / 10),
-              backgroundColor: 'rgba(54, 162, 235, 0.4)',
-              borderColor: 'rgba(54, 162, 235, 1)',
-              borderWidth: 1,
-            },
-          ],
-        };
-        setEfficiencyData(barData);
-
-        setLoading(false);
-      } catch (error) {
-        console.error('Erro ao carregar dados do dashboard:', error);
-        setLoading(false);
+        return isToday(parseISO(c.scheduled_date));
+      } catch {
+        return false;
       }
+    }).length;
+
+    // Coletas desta semana
+    const collectionsWeek = collectionsList.filter((c) => {
+      try {
+        return isThisWeek(parseISO(c.scheduled_date), { weekStartsOn: 0 });
+      } catch {
+        return false;
+      }
+    }).length;
+
+    // Peso total coletado esta semana
+    const wasteCollectedWeek = collectionsList
+      .filter((c) => {
+        try {
+          return (
+            c.status === "completed" &&
+            isThisWeek(parseISO(c.scheduled_date), { weekStartsOn: 0 })
+          );
+        } catch {
+          return false;
+        }
+      })
+      .reduce((sum, c) => sum + (parseFloat(c.waste_collected_weight) || 0), 0);
+
+    setStats({
+      totalRoutes,
+      activeRoutes,
+      totalVehicles,
+      activeVehicles,
+      totalDrivers,
+      activeDrivers,
+      totalCollectionPoints,
+      collectionsToday,
+      collectionsCompleted,
+      collectionsInProgress,
+      collectionsPending,
+      collectionsWeek,
+      wasteCollectedWeek,
+    });
+  };
+
+  const prepareChartData = (collectionsList) => {
+    // Gráfico de coletas dos últimos 30 dias
+    const last30Days = [];
+    for (let i = 29; i >= 0; i--) {
+      const date = subDays(new Date(), i);
+      const dateStr = format(date, "yyyy-MM-dd");
+      const count = collectionsList.filter((c) => {
+        try {
+          return format(parseISO(c.scheduled_date), "yyyy-MM-dd") === dateStr;
+        } catch {
+          return false;
+        }
+      }).length;
+
+      last30Days.push({
+        date: format(date, "dd/MM"),
+        count,
+      });
+    }
+
+    setCollectionsChartData({
+      labels: last30Days.map((d) => d.date),
+      datasets: [
+        {
+          label: "Coletas por dia",
+          data: last30Days.map((d) => d.count),
+          fill: false,
+          borderColor: "rgb(75, 192, 192)",
+          backgroundColor: "rgba(75, 192, 192, 0.2)",
+          tension: 0.3,
+        },
+      ],
+    });
+
+    // Gráfico de status das coletas
+    const statusCounts = {
+      Pendente: collectionsList.filter((c) => c.status === "pending").length,
+      "Em Andamento": collectionsList.filter((c) => c.status === "in_progress")
+        .length,
+      Concluída: collectionsList.filter((c) => c.status === "completed").length,
+      Cancelada: collectionsList.filter((c) => c.status === "cancelled").length,
     };
 
-    fetchAll();
-  }, []);
+    setStatusChartData({
+      labels: Object.keys(statusCounts),
+      datasets: [
+        {
+          data: Object.values(statusCounts),
+          backgroundColor: ["#ffc107", "#0dcaf0", "#198754", "#dc3545"],
+          borderWidth: 1,
+        },
+      ],
+    });
+
+    // Gráfico de coletas por rota (top 10)
+    const routeCounts = {};
+    collectionsList.forEach((c) => {
+      const routeName = c.route_name || "Sem rota";
+      routeCounts[routeName] = (routeCounts[routeName] || 0) + 1;
+    });
+
+    const topRoutes = Object.entries(routeCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10);
+
+    setRouteChartData({
+      labels: topRoutes.map(([name]) => name),
+      datasets: [
+        {
+          label: "Número de coletas",
+          data: topRoutes.map(([, count]) => count),
+          backgroundColor: "rgba(54, 162, 235, 0.6)",
+          borderColor: "rgba(54, 162, 235, 1)",
+          borderWidth: 1,
+        },
+      ],
+    });
+  };
+
+  const getStatusBadge = (status) => {
+    const config = {
+      pending: { bg: "warning", text: "Pendente" },
+      in_progress: { bg: "info", text: "Em Andamento" },
+      completed: { bg: "success", text: "Concluída" },
+      cancelled: { bg: "danger", text: "Cancelada" },
+    };
+    const { bg, text } = config[status] || { bg: "secondary", text: status };
+    return <Badge bg={bg}>{text}</Badge>;
+  };
 
   if (loading) {
     return (
-      <Container>
-        <div className="loading-spinner">
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Carregando...</span>
-          </div>
+      <Container
+        fluid
+        className="d-flex justify-content-center align-items-center"
+        style={{ minHeight: "80vh" }}
+      >
+        <div className="text-center">
+          <Spinner
+            animation="border"
+            variant="primary"
+            style={{ width: "3rem", height: "3rem" }}
+          />
+          <p className="mt-3 text-muted">Carregando dashboard...</p>
         </div>
       </Container>
     );
@@ -165,23 +353,28 @@ const Dashboard = () => {
             <i className="fas fa-tachometer-alt me-2"></i>
             Dashboard
           </h2>
-          <p className="text-muted">Visão geral do sistema de coleta de resíduos</p>
+          <p className="text-muted">
+            Visão geral do sistema de coleta de resíduos sólidos urbanos
+          </p>
         </Col>
       </Row>
 
       {/* Cards de estatísticas principais */}
       <Row className="mb-4">
         <Col xs={12} sm={6} lg={3} className="mb-3">
-          <Card className="dashboard-card h-100 border-start border-primary border-4">
+          <Card className="h-100 border-start border-primary border-4 shadow-sm">
             <Card.Body>
               <div className="d-flex align-items-center">
                 <div className="flex-grow-1">
-                  <h6 className="card-title text-primary">Total de Rotas</h6>
-                  <h3 className="mb-0">{stats.totalRoutes}</h3>
-                  <small className="text-muted">Ativas: {stats.activeRoutes}</small>
+                  <h6 className="card-title text-muted mb-1">Rotas</h6>
+                  <h3 className="mb-0 text-primary">{stats.totalRoutes}</h3>
+                  <small className="text-muted">
+                    <i className="fas fa-check-circle text-success me-1"></i>
+                    {stats.activeRoutes} ativas
+                  </small>
                 </div>
-                <div className="text-primary">
-                  <i className="fas fa-route fa-2x"></i>
+                <div className="text-primary opacity-50">
+                  <i className="fas fa-route fa-3x"></i>
                 </div>
               </div>
             </Card.Body>
@@ -189,16 +382,19 @@ const Dashboard = () => {
         </Col>
 
         <Col xs={12} sm={6} lg={3} className="mb-3">
-          <Card className="dashboard-card h-100 border-start border-success border-4">
+          <Card className="h-100 border-start border-success border-4 shadow-sm">
             <Card.Body>
               <div className="d-flex align-items-center">
                 <div className="flex-grow-1">
-                  <h6 className="card-title text-success">Veículos Ativos</h6>
-                  <h3 className="mb-0">{stats.activeVehicles}</h3>
-                  <small className="text-muted">Total: {stats.totalVehicles}</small>
+                  <h6 className="card-title text-muted mb-1">Veículos</h6>
+                  <h3 className="mb-0 text-success">{stats.totalVehicles}</h3>
+                  <small className="text-muted">
+                    <i className="fas fa-check-circle text-success me-1"></i>
+                    {stats.activeVehicles} ativos
+                  </small>
                 </div>
-                <div className="text-success">
-                  <i className="fas fa-truck fa-2x"></i>
+                <div className="text-success opacity-50">
+                  <i className="fas fa-truck fa-3x"></i>
                 </div>
               </div>
             </Card.Body>
@@ -206,16 +402,19 @@ const Dashboard = () => {
         </Col>
 
         <Col xs={12} sm={6} lg={3} className="mb-3">
-          <Card className="dashboard-card h-100 border-start border-warning border-4">
+          <Card className="h-100 border-start border-info border-4 shadow-sm">
             <Card.Body>
               <div className="d-flex align-items-center">
                 <div className="flex-grow-1">
-                  <h6 className="card-title text-warning">Pontos de Coleta</h6>
-                  <h3 className="mb-0">{stats.totalCollectionPoints}</h3>
-                  <small className="text-muted">Cheios: {stats.fullCollectionPoints}</small>
+                  <h6 className="card-title text-muted mb-1">Motoristas</h6>
+                  <h3 className="mb-0 text-info">{stats.totalDrivers}</h3>
+                  <small className="text-muted">
+                    <i className="fas fa-check-circle text-success me-1"></i>
+                    {stats.activeDrivers} ativos
+                  </small>
                 </div>
-                <div className="text-warning">
-                  <i className="fas fa-map-marker-alt fa-2x"></i>
+                <div className="text-info opacity-50">
+                  <i className="fas fa-user-tie fa-3x"></i>
                 </div>
               </div>
             </Card.Body>
@@ -223,16 +422,23 @@ const Dashboard = () => {
         </Col>
 
         <Col xs={12} sm={6} lg={3} className="mb-3">
-          <Card className="dashboard-card h-100 border-start border-info border-4">
+          <Card className="h-100 border-start border-warning border-4 shadow-sm">
             <Card.Body>
               <div className="d-flex align-items-center">
                 <div className="flex-grow-1">
-                  <h6 className="card-title text-info">Coletas Hoje</h6>
-                  <h3 className="mb-0">{stats.collectionsToday}</h3>
-                  <small className="text-muted">Execuções: {stats.executionsToday}</small>
+                  <h6 className="card-title text-muted mb-1">
+                    Pontos de Coleta
+                  </h6>
+                  <h3 className="mb-0 text-warning">
+                    {stats.totalCollectionPoints}
+                  </h3>
+                  <small className="text-muted">
+                    <i className="fas fa-map-marker-alt me-1"></i>
+                    Total cadastrados
+                  </small>
                 </div>
-                <div className="text-info">
-                  <i className="fas fa-trash fa-2x"></i>
+                <div className="text-warning opacity-50">
+                  <i className="fas fa-map-marked-alt fa-3x"></i>
                 </div>
               </div>
             </Card.Body>
@@ -240,103 +446,274 @@ const Dashboard = () => {
         </Col>
       </Row>
 
-      {/* Gráficos */}
+      {/* Cards de coletas */}
+      <Row className="mb-4">
+        <Col xs={12} sm={6} lg={3} className="mb-3">
+          <Card className="h-100 shadow-sm">
+            <Card.Body className="text-center">
+              <i className="fas fa-calendar-day fa-2x text-primary mb-2"></i>
+              <h3 className="mb-1">{stats.collectionsToday}</h3>
+              <small className="text-muted">Coletas Hoje</small>
+            </Card.Body>
+          </Card>
+        </Col>
+
+        <Col xs={12} sm={6} lg={3} className="mb-3">
+          <Card className="h-100 shadow-sm">
+            <Card.Body className="text-center">
+              <i className="fas fa-calendar-week fa-2x text-info mb-2"></i>
+              <h3 className="mb-1">{stats.collectionsWeek}</h3>
+              <small className="text-muted">Coletas Esta Semana</small>
+            </Card.Body>
+          </Card>
+        </Col>
+
+        <Col xs={12} sm={6} lg={3} className="mb-3">
+          <Card className="h-100 shadow-sm">
+            <Card.Body className="text-center">
+              <i className="fas fa-check-circle fa-2x text-success mb-2"></i>
+              <h3 className="mb-1">{stats.collectionsCompleted}</h3>
+              <small className="text-muted">Coletas Concluídas</small>
+            </Card.Body>
+          </Card>
+        </Col>
+
+        <Col xs={12} sm={6} lg={3} className="mb-3">
+          <Card className="h-100 shadow-sm">
+            <Card.Body className="text-center">
+              <i className="fas fa-weight fa-2x text-success mb-2"></i>
+              <h3 className="mb-1">{stats.wasteCollectedWeek.toFixed(1)}</h3>
+              <small className="text-muted">kg Coletados (Semana)</small>
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
+
+      {/* Gráficos principais */}
       <Row className="mb-4">
         <Col xs={12} lg={8} className="mb-3">
-          <Card>
-            <Card.Header>
+          <Card className="shadow-sm">
+            <Card.Header className="bg-white">
               <h5 className="mb-0">
-                <i className="fas fa-chart-line me-2"></i>
-                Coletas diárias (últimos 30 dias)
+                <i className="fas fa-chart-line me-2 text-primary"></i>
+                Coletas nos últimos 30 dias
               </h5>
             </Card.Header>
             <Card.Body>
               {collectionsChartData ? (
-                <Line data={collectionsChartData} options={{ responsive: true }} />
+                <Line
+                  data={collectionsChartData}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                      legend: {
+                        display: true,
+                        position: "top",
+                      },
+                    },
+                    scales: {
+                      y: {
+                        beginAtZero: true,
+                        ticks: {
+                          stepSize: 1,
+                        },
+                      },
+                    },
+                  }}
+                />
               ) : (
-                <div className="text-muted">Sem dados suficientes para exibir.</div>
+                <div className="text-center text-muted py-5">
+                  <i className="fas fa-chart-line fa-3x mb-3 opacity-50"></i>
+                  <p>Sem dados suficientes</p>
+                </div>
               )}
             </Card.Body>
           </Card>
         </Col>
 
         <Col xs={12} lg={4} className="mb-3">
-          <Card>
-            <Card.Header>
+          <Card className="shadow-sm">
+            <Card.Header className="bg-white">
               <h5 className="mb-0">
-                <i className="fas fa-chart-pie me-2"></i>
-                Coletas por tipo de ponto
+                <i className="fas fa-chart-pie me-2 text-primary"></i>
+                Status das Coletas
               </h5>
             </Card.Header>
             <Card.Body>
-              {wasteTypesData ? (
-                <Doughnut data={wasteTypesData} options={{ responsive: true }} />
+              {statusChartData ? (
+                <Doughnut
+                  data={statusChartData}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                      legend: {
+                        position: "bottom",
+                      },
+                    },
+                  }}
+                />
               ) : (
-                <div className="text-muted">Sem dados suficientes para exibir.</div>
+                <div className="text-center text-muted py-5">
+                  <i className="fas fa-chart-pie fa-3x mb-3 opacity-50"></i>
+                  <p>Sem dados suficientes</p>
+                </div>
               )}
             </Card.Body>
           </Card>
         </Col>
       </Row>
 
+      {/* Gráfico de rotas e coletas recentes */}
       <Row className="mb-4">
-        <Col xs={12} lg={6} className="mb-3">
-          <Card>
-            <Card.Header>
+        <Col xs={12} lg={7} className="mb-3">
+          <Card className="shadow-sm">
+            <Card.Header className="bg-white">
               <h5 className="mb-0">
-                <i className="fas fa-chart-bar me-2"></i>
-                Eficiência por rota (taxa de conclusão)
+                <i className="fas fa-chart-bar me-2 text-primary"></i>
+                Top 10 Rotas Mais Utilizadas
               </h5>
             </Card.Header>
             <Card.Body>
-              {efficiencyData ? (
-                <Bar data={efficiencyData} options={{ responsive: true, scales: { y: { min: 0, max: 100 } } }} />
+              {routeChartData ? (
+                <Bar
+                  data={routeChartData}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    indexAxis: "y",
+                    plugins: {
+                      legend: {
+                        display: false,
+                      },
+                    },
+                    scales: {
+                      x: {
+                        beginAtZero: true,
+                        ticks: {
+                          stepSize: 1,
+                        },
+                      },
+                    },
+                  }}
+                />
               ) : (
-                <div className="text-muted">Sem dados suficientes para exibir.</div>
+                <div className="text-center text-muted py-5">
+                  <i className="fas fa-chart-bar fa-3x mb-3 opacity-50"></i>
+                  <p>Sem dados suficientes</p>
+                </div>
               )}
             </Card.Body>
           </Card>
         </Col>
 
-        <Col xs={12} lg={6} className="mb-3">
-          <Card>
-            <Card.Header>
+        <Col xs={12} lg={5} className="mb-3">
+          <Card className="shadow-sm">
+            <Card.Header className="bg-white">
               <h5 className="mb-0">
-                <i className="fas fa-info-circle me-2"></i>
-                Destaques da semana
+                <i className="fas fa-list me-2 text-primary"></i>
+                Coletas Recentes
+              </h5>
+            </Card.Header>
+            <Card.Body style={{ maxHeight: "400px", overflowY: "auto" }}>
+              {recentCollections.length > 0 ? (
+                <ListGroup variant="flush">
+                  {recentCollections.map((collection) => (
+                    <ListGroup.Item key={collection.id} className="px-0">
+                      <div className="d-flex justify-content-between align-items-start">
+                        <div className="flex-grow-1">
+                          <div className="fw-bold">
+                            {collection.route_name || "Rota não definida"}
+                          </div>
+                          <small className="text-muted">
+                            <i className="fas fa-calendar me-1"></i>
+                            {collection.scheduled_date
+                              ? format(
+                                  parseISO(collection.scheduled_date),
+                                  "dd/MM/yyyy"
+                                )
+                              : "Data não definida"}
+                          </small>
+                          <br />
+                          <small className="text-muted">
+                            <i className="fas fa-truck me-1"></i>
+                            {collection.vehicle_plate || "Veículo não definido"}
+                          </small>
+                        </div>
+                        <div className="text-end">
+                          {getStatusBadge(collection.status)}
+                          {collection.waste_collected_weight > 0 && (
+                            <>
+                              <br />
+                              <small className="text-success">
+                                <i className="fas fa-weight me-1"></i>
+                                {collection.waste_collected_weight} kg
+                              </small>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </ListGroup.Item>
+                  ))}
+                </ListGroup>
+              ) : (
+                <div className="text-center text-muted py-5">
+                  <i className="fas fa-clipboard-list fa-3x mb-3 opacity-50"></i>
+                  <p>Nenhuma coleta registrada</p>
+                </div>
+              )}
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
+
+      {/* Resumo por status */}
+      <Row className="mb-4">
+        <Col xs={12}>
+          <Card className="shadow-sm">
+            <Card.Header className="bg-white">
+              <h5 className="mb-0">
+                <i className="fas fa-info-circle me-2 text-primary"></i>
+                Resumo de Coletas por Status
               </h5>
             </Card.Header>
             <Card.Body>
               <Row className="text-center">
-                <Col xs={4} className="mb-3">
-                  <h4 className="text-success">{Number(stats.wasteCollectedWeek).toFixed(1)} kg</h4>
-                  <small className="text-muted">Resíduos coletados</small>
+                <Col xs={6} md={3} className="mb-3">
+                  <div className="p-3 bg-warning bg-opacity-10 rounded">
+                    <i className="fas fa-clock fa-2x text-warning mb-2"></i>
+                    <h3 className="mb-0">{stats.collectionsPending}</h3>
+                    <small className="text-muted">Pendentes</small>
+                  </div>
                 </Col>
-                <Col xs={4} className="mb-3">
-                  <h4 className="text-primary">{stats.collectionsWeek}</h4>
-                  <small className="text-muted">Coletas realizadas</small>
+                <Col xs={6} md={3} className="mb-3">
+                  <div className="p-3 bg-info bg-opacity-10 rounded">
+                    <i className="fas fa-spinner fa-2x text-info mb-2"></i>
+                    <h3 className="mb-0">{stats.collectionsInProgress}</h3>
+                    <small className="text-muted">Em Andamento</small>
+                  </div>
                 </Col>
-                <Col xs={4} className="mb-3">
-                  <h4 className="text-info">{Number(stats.distanceTraveledWeek).toFixed(1)} km</h4>
-                  <small className="text-muted">Distância percorrida</small>
+                <Col xs={6} md={3} className="mb-3">
+                  <div className="p-3 bg-success bg-opacity-10 rounded">
+                    <i className="fas fa-check-circle fa-2x text-success mb-2"></i>
+                    <h3 className="mb-0">{stats.collectionsCompleted}</h3>
+                    <small className="text-muted">Concluídas</small>
+                  </div>
+                </Col>
+                <Col xs={6} md={3} className="mb-3">
+                  <div className="p-3 bg-secondary bg-opacity-10 rounded">
+                    <i className="fas fa-ban fa-2x text-secondary mb-2"></i>
+                    <h3 className="mb-0">
+                      {
+                        collections.filter((c) => c.status === "cancelled")
+                          .length
+                      }
+                    </h3>
+                    <small className="text-muted">Canceladas</small>
+                  </div>
                 </Col>
               </Row>
-              <hr />
-              <h6 className="mb-3"><i className="fas fa-bell me-2 text-warning"></i>Alertas</h6>
-              <ListGroup variant="flush">
-                <ListGroup.Item className="d-flex justify-content-between align-items-center px-0">
-                  Veículos com manutenção pendente
-                  <Badge bg="warning" text="dark">{stats.vehiclesMaintenanceDue}</Badge>
-                </ListGroup.Item>
-                <ListGroup.Item className="d-flex justify-content-between align-items-center px-0">
-                  Pontos que precisam de coleta
-                  <Badge bg="danger">{stats.pointsNeedCollection}</Badge>
-                </ListGroup.Item>
-                <ListGroup.Item className="d-flex justify-content-between align-items-center px-0">
-                  Execuções atrasadas
-                  <Badge bg="secondary">{stats.overdueExecutions}</Badge>
-                </ListGroup.Item>
-              </ListGroup>
             </Card.Body>
           </Card>
         </Col>

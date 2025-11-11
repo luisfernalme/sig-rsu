@@ -38,7 +38,7 @@ const Navigation = () => {
             <LinkContainer to="/vehicles">
               <Nav.Link>
                 <i className="fas fa-truck me-1"></i>
-                Veículos
+                Veículos e Motoristas
               </Nav.Link>
             </LinkContainer>
 
