@@ -1,16 +1,16 @@
-import React, { useEffect, useRef } from 'react';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+import React, { useEffect, useRef } from "react";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 
 // Corrigir ícones do Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
-  iconRetinaUrl: require('leaflet/dist/images/marker-icon-2x.png'),
-  iconUrl: require('leaflet/dist/images/marker-icon.png'),
-  shadowUrl: require('leaflet/dist/images/marker-shadow.png'),
+  iconRetinaUrl: require("leaflet/dist/images/marker-icon-2x.png"),
+  iconUrl: require("leaflet/dist/images/marker-icon.png"),
+  shadowUrl: require("leaflet/dist/images/marker-shadow.png"),
 });
 
-const MapComponent = ({ 
+const MapComponent = ({
   center = [-23.5505, -46.6333], // São Paulo
   zoom = 12,
   points = [],
@@ -21,7 +21,7 @@ const MapComponent = ({
   isSelectionMode = false,
   selectedLocation = null,
   centerOnPoint = null,
-  style = { height: '500px', width: '100%' }
+  style = { height: "500px", width: "100%" },
 }) => {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
@@ -33,8 +33,8 @@ const MapComponent = ({
       mapInstanceRef.current = L.map(mapRef.current).setView(center, zoom);
 
       // Adicionar camada base
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors'
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "© OpenStreetMap contributors",
       }).addTo(mapInstanceRef.current);
     }
 
@@ -58,12 +58,12 @@ const MapComponent = ({
     };
 
     // Remover listeners anteriores e adicionar novo
-    mapInstanceRef.current.off('click');
-    mapInstanceRef.current.on('click', handleMapClick);
+    mapInstanceRef.current.off("click");
+    mapInstanceRef.current.on("click", handleMapClick);
 
     return () => {
       if (mapInstanceRef.current) {
-        mapInstanceRef.current.off('click', handleMapClick);
+        mapInstanceRef.current.off("click", handleMapClick);
       }
     };
   }, [onMapClick]);
@@ -74,9 +74,9 @@ const MapComponent = ({
 
     const mapContainer = mapInstanceRef.current.getContainer();
     if (isSelectionMode) {
-      mapContainer.style.cursor = 'crosshair';
+      mapContainer.style.cursor = "crosshair";
     } else {
-      mapContainer.style.cursor = '';
+      mapContainer.style.cursor = "";
     }
   }, [isSelectionMode]);
 
@@ -87,7 +87,7 @@ const MapComponent = ({
     const map = mapInstanceRef.current;
 
     // Limpar marcadores existentes (simples approach)
-    map.eachLayer(layer => {
+    map.eachLayer((layer) => {
       if (layer instanceof L.Marker && layer !== selectionMarkerRef.current) {
         map.removeLayer(layer);
       }
@@ -99,93 +99,107 @@ const MapComponent = ({
     }
 
     // Adicionar pontos de coleta
-    points.forEach(point => {
+    points.forEach((point) => {
       // Validar coordenadas antes de criar o marcador
       const lat = point.latitude;
       const lng = point.longitude;
-      
+
       if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
-        console.warn('Coordenadas inválidas para o ponto:', point);
+        console.warn("Coordenadas inválidas para o ponto:", point);
         return;
       }
 
-      const marker = L.marker([lat, lng])
-        .addTo(map)
-        .bindPopup(`
+      const marker = L.marker([lat, lng]).addTo(map).bindPopup(`
           <div>
             <h6>${point.name || point.code}</h6>
-            <p><strong>Endereço:</strong> ${point.address || 'N/A'}</p>
-            <p><strong>Status:</strong> <span class="badge ${getStatusBadgeClass(point.status)}">${getStatusLabel(point.status)}</span></p>
-            <p><strong>Nível:</strong> ${point.current_fill_level || 0}%</p>
+            <p><strong>Endereço:</strong> ${point.address || "N/A"}</p>
+            <p><strong>Status:</strong> <span class="badge ${getStatusBadgeClass(
+              point.status
+            )}">${getStatusLabel(point.status)}</span></p>
           </div>
         `);
 
       if (onPointClick) {
-        marker.on('click', () => onPointClick(point));
+        marker.on("click", () => onPointClick(point));
       }
     });
 
     // Adicionar veículos
-    vehicles.forEach(vehicle => {
+    vehicles.forEach((vehicle) => {
       if (vehicle.lastLocation) {
         const lat = vehicle.lastLocation.latitude;
         const lng = vehicle.lastLocation.longitude;
-        
+
         if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
-          console.warn('Coordenadas inválidas para o veículo:', vehicle);
+          console.warn("Coordenadas inválidas para o veículo:", vehicle);
           return;
         }
 
         const vehicleIcon = L.divIcon({
           html: `<i class="fas fa-truck" style="color: #007bff; font-size: 20px;"></i>`,
           iconSize: [25, 25],
-          className: 'vehicle-marker'
+          className: "vehicle-marker",
         });
 
         L.marker([lat, lng], {
-          icon: vehicleIcon
-        })
-          .addTo(map)
-          .bindPopup(`
+          icon: vehicleIcon,
+        }).addTo(map).bindPopup(`
             <div>
-              <h6><i class="fas fa-truck me-1"></i> ${vehicle.license_plate}</h6>
+              <h6><i class="fas fa-truck me-1"></i> ${
+                vehicle.license_plate
+              }</h6>
               <p><strong>Modelo:</strong> ${vehicle.brand} ${vehicle.model}</p>
-              <p><strong>Status:</strong> <span class="badge ${getVehicleStatusClass(vehicle.status)}">${vehicle.status_display}</span></p>
+              <p><strong>Status:</strong> <span class="badge ${getVehicleStatusClass(
+                vehicle.status
+              )}">${vehicle.status_display}</span></p>
             </div>
           `);
       }
     });
 
     // Adicionar rotas
-    routes.forEach(route => {
-      if (route.geometry && route.geometry.coordinates && Array.isArray(route.geometry.coordinates)) {
+    routes.forEach((route) => {
+      if (
+        route.geometry &&
+        route.geometry.coordinates &&
+        Array.isArray(route.geometry.coordinates)
+      ) {
         try {
           const coordinates = route.geometry.coordinates
-            .filter(coord => coord && coord.length >= 2 && !isNaN(coord[0]) && !isNaN(coord[1]))
-            .map(coord => [coord[1], coord[0]]); // Inverter lat/lng
-          
+            .filter(
+              (coord) =>
+                coord &&
+                coord.length >= 2 &&
+                !isNaN(coord[0]) &&
+                !isNaN(coord[1])
+            )
+            .map((coord) => [coord[1], coord[0]]); // Inverter lat/lng
+
           if (coordinates.length > 1) {
             L.polyline(coordinates, {
-              color: '#28a745',
+              color: "#28a745",
               weight: 4,
-              opacity: 0.7
-            })
-              .addTo(map)
-              .bindPopup(`
+              opacity: 0.7,
+            }).addTo(map).bindPopup(`
                 <div>
                   <h6><i class="fas fa-route me-1"></i> ${route.name}</h6>
-                  <p><strong>Descrição:</strong> ${route.description || 'N/A'}</p>
-                  <p><strong>Distância:</strong> ${route.estimated_distance || 'N/A'} km</p>
-                  <p><strong>Status:</strong> <span class="badge ${getRouteStatusClass(route.status)}">${route.status_display || route.status}</span></p>
+                  <p><strong>Descrição:</strong> ${
+                    route.description || "N/A"
+                  }</p>
+                  <p><strong>Distância:</strong> ${
+                    route.estimated_distance || "N/A"
+                  } km</p>
+                  <p><strong>Status:</strong> <span class="badge ${getRouteStatusClass(
+                    route.status
+                  )}">${route.status_display || route.status}</span></p>
                 </div>
               `);
           }
         } catch (error) {
-          console.warn('Erro ao processar geometria da rota:', route, error);
+          console.warn("Erro ao processar geometria da rota:", route, error);
         }
       }
     });
-
   }, [points, routes, vehicles, isSelectionMode]);
 
   // Gerenciar marcador de seleção
@@ -201,20 +215,22 @@ const MapComponent = ({
     }
 
     // Adicionar novo marcador se há localização selecionada
-    if (selectedLocation && selectedLocation.latitude && selectedLocation.longitude) {
+    if (
+      selectedLocation &&
+      selectedLocation.latitude &&
+      selectedLocation.longitude
+    ) {
       const selectionIcon = L.divIcon({
         html: `<i class="fas fa-map-pin" style="color: #dc3545; font-size: 30px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);"></i>`,
         iconSize: [30, 30],
         iconAnchor: [15, 30],
-        className: 'selection-marker'
+        className: "selection-marker",
       });
 
       selectionMarkerRef.current = L.marker(
-        [selectedLocation.latitude, selectedLocation.longitude], 
+        [selectedLocation.latitude, selectedLocation.longitude],
         { icon: selectionIcon }
-      )
-        .addTo(map)
-        .bindPopup(`
+      ).addTo(map).bindPopup(`
           <div>
             <h6><i class="fas fa-map-pin me-1 text-danger"></i> Local Selecionado</h6>
             <p><strong>Coordenadas:</strong></p>
@@ -224,7 +240,10 @@ const MapComponent = ({
         `);
 
       // Centralizar mapa na localização selecionada
-      map.setView([selectedLocation.latitude, selectedLocation.longitude], map.getZoom());
+      map.setView(
+        [selectedLocation.latitude, selectedLocation.longitude],
+        map.getZoom()
+      );
     }
   }, [selectedLocation]);
 
@@ -239,25 +258,27 @@ const MapComponent = ({
     if (lat && lng && !isNaN(lat) && !isNaN(lng)) {
       // Fechar todos os popups abertos primeiro
       map.closePopup();
-      
+
       // Pequeno delay para garantir que o mapa está pronto
       setTimeout(() => {
         // Centralizar e dar zoom no ponto com flyTo para animação mais suave
         map.flyTo([lat, lng], 18, {
           animate: true,
-          duration: 1.5
+          duration: 1.5,
         });
 
         // Aguardar animação terminar para abrir o popup
         setTimeout(() => {
           // Encontrar e abrir o popup do marcador
           let foundMarker = false;
-          map.eachLayer(layer => {
+          map.eachLayer((layer) => {
             if (layer instanceof L.Marker && !foundMarker) {
               const markerLatLng = layer.getLatLng();
               // Usar comparação com tolerância por causa de arredondamento
-              if (Math.abs(markerLatLng.lat - lat) < 0.0001 && 
-                  Math.abs(markerLatLng.lng - lng) < 0.0001) {
+              if (
+                Math.abs(markerLatLng.lat - lat) < 0.0001 &&
+                Math.abs(markerLatLng.lng - lng) < 0.0001
+              ) {
                 layer.openPopup();
                 foundMarker = true;
               }
@@ -270,44 +291,61 @@ const MapComponent = ({
 
   const getStatusBadgeClass = (status) => {
     switch (status) {
-      case 'active': return 'bg-success';
-      case 'full': return 'bg-danger';
-      case 'maintenance': return 'bg-warning';
-      default: return 'bg-secondary';
+      case "active":
+        return "bg-success";
+      case "full":
+        return "bg-danger";
+      case "maintenance":
+        return "bg-warning";
+      default:
+        return "bg-secondary";
     }
   };
 
   const getStatusLabel = (status) => {
     switch (status) {
-      case 'active': return 'Ativo';
-      case 'full': return 'Cheio';
-      case 'maintenance': return 'Manutenção';
-      case 'inactive': return 'Inativo';
-      default: return status;
+      case "active":
+        return "Ativo";
+      case "full":
+        return "Cheio";
+      case "maintenance":
+        return "Manutenção";
+      case "inactive":
+        return "Inativo";
+      default:
+        return status;
     }
   };
 
   const getVehicleStatusClass = (status) => {
     switch (status) {
-      case 'active': return 'bg-success';
-      case 'maintenance': return 'bg-warning';
-      case 'inactive': return 'bg-secondary';
-      default: return 'bg-secondary';
+      case "active":
+        return "bg-success";
+      case "maintenance":
+        return "bg-warning";
+      case "inactive":
+        return "bg-secondary";
+      default:
+        return "bg-secondary";
     }
   };
 
   const getRouteStatusClass = (status) => {
     switch (status) {
-      case 'active': return 'bg-success';
-      case 'inactive': return 'bg-secondary';
-      case 'maintenance': return 'bg-warning';
-      default: return 'bg-secondary';
+      case "active":
+        return "bg-success";
+      case "inactive":
+        return "bg-secondary";
+      case "maintenance":
+        return "bg-warning";
+      default:
+        return "bg-secondary";
     }
   };
 
   return (
-    <div 
-      ref={mapRef} 
+    <div
+      ref={mapRef}
       style={style}
       className="leaflet-container border rounded"
     />

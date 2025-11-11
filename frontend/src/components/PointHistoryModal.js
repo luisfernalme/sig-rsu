@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { Modal, Tabs, Tab, Button, Spinner, Alert } from 'react-bootstrap';
-import PhotoGallery from './PhotoGallery';
-import CollectionHistory from './CollectionHistory';
-import PhotoUploadModal from './PhotoUploadModal';
-import { collectionPointsAPI } from '../services/api';
-import toast from 'react-hot-toast';
+import React, { useState, useEffect } from "react";
+import { Modal, Tabs, Tab, Button, Spinner, Alert } from "react-bootstrap";
+import PhotoGallery from "./PhotoGallery";
+import CollectionHistory from "./CollectionHistory";
+import PhotoUploadModal from "./PhotoUploadModal";
+import { collectionPointsAPI } from "../services/api";
+import toast from "react-hot-toast";
 
 const PointHistoryModal = ({ show, onHide, collectionPoint }) => {
-  const [activeTab, setActiveTab] = useState('history');
+  const [activeTab, setActiveTab] = useState("history");
   const [loading, setLoading] = useState(false);
   const [photos, setPhotos] = useState([]);
   const [collections, setCollections] = useState([]);
@@ -25,15 +25,17 @@ const PointHistoryModal = ({ show, onHide, collectionPoint }) => {
     try {
       // Carregar histórico e fotos em paralelo
       const [historyData, photosData] = await Promise.all([
-        collectionPointsAPI.getCollectionHistory(collectionPoint.id, { days: 90 }),
+        collectionPointsAPI.getCollectionHistory(collectionPoint.id, {
+          days: 90,
+        }),
         collectionPointsAPI.getPhotos(collectionPoint.id),
       ]);
 
       setCollections(historyData);
       setPhotos(photosData);
     } catch (error) {
-      console.error('Erro ao carregar dados:', error);
-      toast.error('Erro ao carregar dados do ponto de coleta.');
+      console.error("Erro ao carregar dados:", error);
+      toast.error("Erro ao carregar dados do ponto de coleta.");
     } finally {
       setLoading(false);
     }
@@ -43,11 +45,11 @@ const PointHistoryModal = ({ show, onHide, collectionPoint }) => {
     setUploadLoading(true);
     try {
       await collectionPointsAPI.uploadPhoto(collectionPoint.id, photoData);
-      toast.success('Foto enviada com sucesso!');
+      toast.success("Foto enviada com sucesso!");
       await loadData(); // Recarregar fotos
     } catch (error) {
-      console.error('Erro ao enviar foto:', error);
-      toast.error('Erro ao enviar foto. Tente novamente.');
+      console.error("Erro ao enviar foto:", error);
+      toast.error("Erro ao enviar foto. Tente novamente.");
     } finally {
       setUploadLoading(false);
     }
@@ -56,23 +58,23 @@ const PointHistoryModal = ({ show, onHide, collectionPoint }) => {
   const handleSetPrimaryPhoto = async (photoId) => {
     try {
       await collectionPointsAPI.setPrimaryPhoto(photoId);
-      toast.success('Foto definida como principal!');
+      toast.success("Foto definida como principal!");
       await loadData();
     } catch (error) {
-      console.error('Erro ao definir foto principal:', error);
-      toast.error('Erro ao definir foto principal.');
+      console.error("Erro ao definir foto principal:", error);
+      toast.error("Erro ao definir foto principal.");
     }
   };
 
   const handleDeletePhoto = async (photoId) => {
-    if (window.confirm('Tem certeza que deseja excluir esta foto?')) {
+    if (window.confirm("Tem certeza que deseja excluir esta foto?")) {
       try {
         await collectionPointsAPI.deletePhoto(photoId);
-        toast.success('Foto excluída com sucesso!');
+        toast.success("Foto excluída com sucesso!");
         await loadData();
       } catch (error) {
-        console.error('Erro ao excluir foto:', error);
-        toast.error('Erro ao excluir foto.');
+        console.error("Erro ao excluir foto:", error);
+        toast.error("Erro ao excluir foto.");
       }
     }
   };
@@ -95,7 +97,9 @@ const PointHistoryModal = ({ show, onHide, collectionPoint }) => {
               <i className="fas fa-map-marker-alt text-primary me-2"></i>
               <div>
                 <strong>{collectionPoint.address}</strong>
-                <div className="small text-muted">{collectionPoint.neighborhood}</div>
+                <div className="small text-muted">
+                  {collectionPoint.neighborhood}
+                </div>
               </div>
             </div>
           </div>
@@ -105,15 +109,20 @@ const PointHistoryModal = ({ show, onHide, collectionPoint }) => {
             onSelect={(k) => setActiveTab(k)}
             className="mb-3"
           >
-            <Tab eventKey="history" title={
-              <>
-                <i className="fas fa-history me-2"></i>
-                Histórico de Coletas
-                {collections.length > 0 && (
-                  <span className="badge bg-primary ms-2">{collections.length}</span>
-                )}
-              </>
-            }>
+            <Tab
+              eventKey="history"
+              title={
+                <>
+                  <i className="fas fa-history me-2"></i>
+                  Histórico de Coletas
+                  {collections.length > 0 && (
+                    <span className="badge bg-primary ms-2">
+                      {collections.length}
+                    </span>
+                  )}
+                </>
+              }
+            >
               <div className="mt-3">
                 {loading ? (
                   <div className="text-center py-5">
@@ -125,24 +134,33 @@ const PointHistoryModal = ({ show, onHide, collectionPoint }) => {
                     {collections.length > 0 && (
                       <Alert variant="info" className="mb-3">
                         <i className="fas fa-info-circle me-2"></i>
-                        <strong>Últimos 90 dias:</strong> {collections.length} coletas realizadas
+                        <strong>Últimos 90 dias:</strong> {collections.length}{" "}
+                        coletas realizadas
                       </Alert>
                     )}
-                    <CollectionHistory collections={collections} loading={loading} />
+                    <CollectionHistory
+                      collections={collections}
+                      loading={loading}
+                    />
                   </>
                 )}
               </div>
             </Tab>
 
-            <Tab eventKey="photos" title={
-              <>
-                <i className="fas fa-images me-2"></i>
-                Galeria de Fotos
-                {photos.length > 0 && (
-                  <span className="badge bg-success ms-2">{photos.length}</span>
-                )}
-              </>
-            }>
+            <Tab
+              eventKey="photos"
+              title={
+                <>
+                  <i className="fas fa-images me-2"></i>
+                  Galeria de Fotos
+                  {photos.length > 0 && (
+                    <span className="badge bg-success ms-2">
+                      {photos.length}
+                    </span>
+                  )}
+                </>
+              }
+            >
               <div className="mt-3">
                 <div className="d-flex justify-content-between align-items-center mb-3">
                   <h6 className="mb-0">
@@ -168,12 +186,15 @@ const PointHistoryModal = ({ show, onHide, collectionPoint }) => {
               </div>
             </Tab>
 
-            <Tab eventKey="stats" title={
-              <>
-                <i className="fas fa-chart-bar me-2"></i>
-                Estatísticas
-              </>
-            }>
+            <Tab
+              eventKey="stats"
+              title={
+                <>
+                  <i className="fas fa-chart-bar me-2"></i>
+                  Estatísticas
+                </>
+              }
+            >
               <div className="mt-3">
                 <div className="row g-3">
                   <div className="col-md-6">
@@ -212,9 +233,17 @@ const PointHistoryModal = ({ show, onHide, collectionPoint }) => {
                               Peso Total Coletado
                             </h6>
                             <h3 className="mb-0">
-                              {collections.reduce((sum, c) => sum + (c.weight_collected || 0), 0).toFixed(2)} kg
+                              {collections
+                                .reduce(
+                                  (sum, c) => sum + (c.weight_collected || 0),
+                                  0
+                                )
+                                .toFixed(2)}{" "}
+                              kg
                             </h3>
-                            <small className="text-muted">Últimos 90 dias</small>
+                            <small className="text-muted">
+                              Últimos 90 dias
+                            </small>
                           </div>
                         </div>
                       </div>
@@ -227,10 +256,22 @@ const PointHistoryModal = ({ show, onHide, collectionPoint }) => {
                               Taxa de Sucesso
                             </h6>
                             <h3 className="mb-0">
-                              {((collections.filter(c => c.status === 'collected').length / collections.length) * 100).toFixed(1)}%
+                              {(
+                                (collections.filter(
+                                  (c) => c.status === "collected"
+                                ).length /
+                                  collections.length) *
+                                100
+                              ).toFixed(1)}
+                              %
                             </h3>
                             <small className="text-muted">
-                              {collections.filter(c => c.status === 'collected').length} de {collections.length} coletas
+                              {
+                                collections.filter(
+                                  (c) => c.status === "collected"
+                                ).length
+                              }{" "}
+                              de {collections.length} coletas
                             </small>
                           </div>
                         </div>
@@ -248,19 +289,29 @@ const PointHistoryModal = ({ show, onHide, collectionPoint }) => {
                         <div className="row">
                           <div className="col-md-6 mb-2">
                             <small className="text-muted">Código:</small>
-                            <div><strong>{collectionPoint.code}</strong></div>
+                            <div>
+                              <strong>{collectionPoint.code}</strong>
+                            </div>
                           </div>
                           <div className="col-md-6 mb-2">
                             <small className="text-muted">Tipo:</small>
-                            <div><strong>{collectionPoint.type_display || collectionPoint.point_type}</strong></div>
+                            <div>
+                              <strong>
+                                {collectionPoint.type_display ||
+                                  collectionPoint.point_type}
+                              </strong>
+                            </div>
                           </div>
                           <div className="col-md-6 mb-2">
-                            <small className="text-muted">Frequência de Coleta:</small>
-                            <div><strong>{collectionPoint.frequency_display || collectionPoint.collection_frequency}</strong></div>
-                          </div>
-                          <div className="col-md-6 mb-2">
-                            <small className="text-muted">Nível Atual:</small>
-                            <div><strong>{collectionPoint.current_fill_level}%</strong></div>
+                            <small className="text-muted">
+                              Frequência de Coleta:
+                            </small>
+                            <div>
+                              <strong>
+                                {collectionPoint.frequency_display ||
+                                  collectionPoint.collection_frequency}
+                              </strong>
+                            </div>
                           </div>
                         </div>
                       </div>

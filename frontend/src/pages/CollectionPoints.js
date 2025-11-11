@@ -53,7 +53,6 @@ const CollectionPoints = () => {
             latitude: -23.5505,
             longitude: -46.6333,
             status: "active",
-            current_fill_level: 45.5,
             capacity_volume: 5.0,
             capacity_weight: 1000,
             collection_frequency: "daily",
@@ -68,7 +67,6 @@ const CollectionPoints = () => {
             latitude: -23.56,
             longitude: -46.64,
             status: "active",
-            current_fill_level: 78.2,
             capacity_volume: 4.0,
             capacity_weight: 800,
             collection_frequency: "daily",
@@ -216,30 +214,6 @@ const CollectionPoints = () => {
     } catch (error) {
       console.error("Erro ao alterar status:", error);
       toast.error("Erro ao alterar status do ponto.");
-    }
-  };
-
-  const handleMarkAsCollected = async (point) => {
-    try {
-      // Registrar coleta
-      const collectionData = {
-        collection_point: point.id,
-        collection_date: new Date().toISOString(),
-        status: "collected",
-        fill_level_before: point.current_fill_level || 0,
-        fill_level_after: 0,
-        notes: "Coleta registrada via interface web",
-      };
-
-      await collectionPointsAPI.recordCollection(point.id, collectionData);
-      toast.success("Coleta registrada com sucesso!");
-
-      // Atualizar lista
-      const response = await collectionPointsAPI.getCollectionPoints();
-      setCollectionPoints(response.results || response);
-    } catch (error) {
-      console.error("Erro ao registrar coleta:", error);
-      toast.error("Erro ao registrar coleta.");
     }
   };
 
@@ -532,11 +506,6 @@ const CollectionPoints = () => {
 
                     <div className="d-flex justify-content-between align-items-center">
                       {getStatusBadge(point.status)}
-                      {point.current_fill_level != null && (
-                        <div className="small">
-                          Nível: <strong>{point.current_fill_level}%</strong>
-                        </div>
-                      )}
                     </div>
 
                     <div className="mt-2 d-flex gap-1 flex-wrap">
@@ -572,18 +541,6 @@ const CollectionPoints = () => {
                         title="Editar"
                       >
                         <i className="fas fa-edit"></i>
-                      </Button>
-                      <Button
-                        variant="outline-success"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleMarkAsCollected(point);
-                        }}
-                        disabled={point.status !== "active"}
-                        title="Registrar coleta"
-                      >
-                        <i className="fas fa-check"></i>
                       </Button>
                       <Button
                         variant={
@@ -715,29 +672,6 @@ const CollectionPoints = () => {
               </div>
             )}
 
-            {selectedPoint.current_fill_level != null && (
-              <div className="mb-3">
-                <div className="d-flex justify-content-between mb-1">
-                  <small>Nível de Preenchimento</small>
-                  <small className="fw-bold">
-                    {selectedPoint.current_fill_level}%
-                  </small>
-                </div>
-                <div className="progress">
-                  <div
-                    className={`progress-bar ${
-                      selectedPoint.current_fill_level > 80
-                        ? "bg-danger"
-                        : selectedPoint.current_fill_level > 60
-                        ? "bg-warning"
-                        : "bg-success"
-                    }`}
-                    style={{ width: `${selectedPoint.current_fill_level}%` }}
-                  ></div>
-                </div>
-              </div>
-            )}
-
             <div className="d-grid gap-2">
               <Button
                 variant="secondary"
@@ -754,15 +688,6 @@ const CollectionPoints = () => {
               >
                 <i className="fas fa-edit me-2"></i>
                 Editar Ponto
-              </Button>
-              <Button
-                variant="success"
-                size="sm"
-                onClick={() => handleMarkAsCollected(selectedPoint)}
-                disabled={selectedPoint.status !== "active"}
-              >
-                <i className="fas fa-check me-2"></i>
-                Registrar Coleta
               </Button>
             </div>
           </div>

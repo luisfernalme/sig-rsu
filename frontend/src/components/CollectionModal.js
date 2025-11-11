@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Modal, Button, Form, Row, Col, Alert } from "react-bootstrap";
+import { Modal, Button, Form, Row, Col, Alert, Spinner } from "react-bootstrap";
+import { routesAPI } from "../services/api";
 
 const CollectionModal = ({
   show,
@@ -12,6 +13,7 @@ const CollectionModal = ({
 }) => {
   const [formData, setFormData] = useState({
     collection_type: "future", // "future" (agendada) ou "completed" (já realizada)
+    registration_mode: "total", // "total" (total da rota) ou "by_point" (por ponto)
     route: "",
     vehicle: "",
     driver: "",
@@ -23,16 +25,21 @@ const CollectionModal = ({
     waste_collected_weight: "",
     waste_collected_volume: "",
     notes: "",
+    // Itens por ponto de coleta
+    collection_items: [],
   });
 
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
+  const [routePoints, setRoutePoints] = useState([]);
+  const [loadingPoints, setLoadingPoints] = useState(false);
 
   useEffect(() => {
     if (collection) {
       setFormData({
         collection_type:
           collection.status === "completed" ? "completed" : "future",
+        registration_mode: "total",
         route: collection.route || "",
         vehicle: collection.vehicle || "",
         driver: collection.driver || "",
@@ -43,6 +50,7 @@ const CollectionModal = ({
         waste_collected_weight: collection.waste_collected_weight || "",
         waste_collected_volume: collection.waste_collected_volume || "",
         notes: collection.notes || "",
+        collection_items: [],
       });
     } else {
       // Data padrão para hoje
@@ -54,6 +62,7 @@ const CollectionModal = ({
 
       setFormData({
         collection_type: "future",
+        registration_mode: "total",
         route: "",
         vehicle: "",
         driver: "",
@@ -64,10 +73,63 @@ const CollectionModal = ({
         waste_collected_weight: "",
         waste_collected_volume: "",
         notes: "",
+        collection_items: [],
       });
     }
     setErrors({});
   }, [collection, show]);
+
+  // Buscar pontos da rota quando ela for selecionada
+  useEffect(() => {
+    if (formData.route && formData.registration_mode === "by_point") {
+      setLoadingPoints(true);
+
+      routesAPI
+        .getRoute(formData.route)
+        .then((fullRoute) => {
+          if (
+            fullRoute.collection_points &&
+            fullRoute.collection_points.length > 0
+          ) {
+            const points = fullRoute.collection_points.map((point) => ({
+              collection_point: point.id,
+              point_name: point.collection_point_name,
+              sequence_order: point.sequence_order,
+              collected: false,
+              waste_collected_weight: "",
+              waste_collected_volume: "",
+              notes: "",
+            }));
+
+            setFormData((prev) => ({
+              ...prev,
+              collection_items: points,
+            }));
+          } else {
+            setFormData((prev) => ({
+              ...prev,
+              collection_items: [],
+            }));
+          }
+        })
+        .catch((error) => {
+          console.error("Erro ao buscar pontos da rota:", error);
+          setFormData((prev) => ({
+            ...prev,
+            collection_items: [],
+          }));
+        })
+        .finally(() => {
+          setLoadingPoints(false);
+        });
+    } else if (formData.registration_mode === "total") {
+      // Limpar pontos ao voltar para modo total
+      setFormData((prev) => ({
+        ...prev,
+        collection_items: [],
+      }));
+    }
+  }, [formData.route, formData.registration_mode]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -82,6 +144,15 @@ const CollectionModal = ({
         [name]: null,
       }));
     }
+  };
+
+  const handlePointDataChange = (index, field, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      collection_items: prev.collection_items.map((item, i) =>
+        i === index ? { ...item, [field]: value } : item
+      ),
+    }));
   };
 
   const validate = () => {
@@ -161,10 +232,40 @@ const CollectionModal = ({
         dataToSend.scheduled_time = formData.actual_start_time;
         dataToSend.actual_start_time = formData.actual_start_time;
         dataToSend.actual_end_time = formData.actual_end_time;
-        dataToSend.waste_collected_weight =
-          formData.waste_collected_weight || null;
-        dataToSend.waste_collected_volume =
-          formData.waste_collected_volume || null;
+
+        // Verificar modo de registro
+        if (formData.registration_mode === "total") {
+          // Registro total da rota
+          dataToSend.waste_collected_weight =
+            formData.waste_collected_weight || null;
+          dataToSend.waste_collected_volume =
+            formData.waste_collected_volume || null;
+        } else {
+          // Registro por ponto
+          dataToSend.collection_items = formData.collection_items
+            .filter((item) => item.collected)
+            .map((item) => ({
+              collection_point: item.collection_point,
+              weight: parseFloat(item.waste_collected_weight) || 0,
+              collected: item.collected,
+              notes: item.notes || "",
+            }));
+
+          // Calcular peso total dos pontos coletados
+          const totalWeight = formData.collection_items
+            .filter((item) => item.collected)
+            .reduce(
+              (sum, item) =>
+                sum + (parseFloat(item.waste_collected_weight) || 0),
+              0
+            );
+          dataToSend.waste_collected_weight = totalWeight;
+
+          // Volume precisa ser informado separadamente no modo por ponto
+          dataToSend.waste_collected_volume =
+            formData.waste_collected_volume || null;
+        }
+
         dataToSend.status = "completed";
       }
 
@@ -416,43 +517,221 @@ const CollectionModal = ({
                 </Col>
               </Row>
 
-              <Row>
-                <Col md={6} className="mb-3">
+              {/* Modo de registro de resíduos */}
+              <Row className="mb-3">
+                <Col md={12}>
                   <Form.Group>
-                    <Form.Label>Peso Coletado (kg)</Form.Label>
-                    <Form.Control
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      name="waste_collected_weight"
-                      value={formData.waste_collected_weight}
-                      onChange={handleChange}
-                      placeholder="Ex: 1500"
-                    />
+                    <Form.Label className="fw-bold">
+                      <i className="fas fa-weight me-2"></i>
+                      Modo de Registro de Resíduos
+                    </Form.Label>
+                    <div className="d-flex gap-3">
+                      <Form.Check
+                        type="radio"
+                        id="mode-total"
+                        name="registration_mode"
+                        value="total"
+                        checked={formData.registration_mode === "total"}
+                        onChange={handleChange}
+                        label={
+                          <span>
+                            <i className="fas fa-list me-2 text-success"></i>
+                            Total da Rota
+                          </span>
+                        }
+                      />
+                      <Form.Check
+                        type="radio"
+                        id="mode-by-point"
+                        name="registration_mode"
+                        value="by_point"
+                        checked={formData.registration_mode === "by_point"}
+                        onChange={handleChange}
+                        label={
+                          <span>
+                            <i className="fas fa-map-marker-alt me-2 text-info"></i>
+                            Por Ponto de Coleta
+                          </span>
+                        }
+                      />
+                    </div>
                     <Form.Text className="text-muted">
-                      Quantidade de resíduos coletados em quilogramas
-                    </Form.Text>
-                  </Form.Group>
-                </Col>
-
-                <Col md={6} className="mb-3">
-                  <Form.Group>
-                    <Form.Label>Volume Coletado (m³)</Form.Label>
-                    <Form.Control
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      name="waste_collected_volume"
-                      value={formData.waste_collected_volume}
-                      onChange={handleChange}
-                      placeholder="Ex: 8.5"
-                    />
-                    <Form.Text className="text-muted">
-                      Volume de resíduos coletados em metros cúbicos
+                      {formData.registration_mode === "total"
+                        ? "Informe apenas o total coletado em toda a rota"
+                        : "Registre a quantidade coletada em cada ponto individualmente"}
                     </Form.Text>
                   </Form.Group>
                 </Col>
               </Row>
+
+              {formData.registration_mode === "total" ? (
+                // Registro total da rota
+                <Row>
+                  <Col md={6} className="mb-3">
+                    <Form.Group>
+                      <Form.Label>Peso Coletado (kg)</Form.Label>
+                      <Form.Control
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        name="waste_collected_weight"
+                        value={formData.waste_collected_weight}
+                        onChange={handleChange}
+                        placeholder="Ex: 1500"
+                      />
+                      <Form.Text className="text-muted">
+                        Quantidade de resíduos coletados em quilogramas
+                      </Form.Text>
+                    </Form.Group>
+                  </Col>
+
+                  <Col md={6} className="mb-3">
+                    <Form.Group>
+                      <Form.Label>Volume Coletado (m³)</Form.Label>
+                      <Form.Control
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        name="waste_collected_volume"
+                        value={formData.waste_collected_volume}
+                        onChange={handleChange}
+                        placeholder="Ex: 8.5"
+                      />
+                      <Form.Text className="text-muted">
+                        Volume de resíduos coletados em metros cúbicos
+                      </Form.Text>
+                    </Form.Group>
+                  </Col>
+                </Row>
+              ) : (
+                // Registro por ponto
+                <Row>
+                  <Col md={12} className="mb-3">
+                    <Form.Label className="fw-bold mb-3">
+                      <i className="fas fa-clipboard-list me-2"></i>
+                      Quantidade por Ponto de Coleta
+                    </Form.Label>
+                    {loadingPoints ? (
+                      <Alert variant="info">
+                        <Spinner
+                          animation="border"
+                          size="sm"
+                          className="me-2"
+                        />
+                        Carregando pontos de coleta...
+                      </Alert>
+                    ) : formData.collection_items.length === 0 ? (
+                      <Alert variant="info">
+                        <i className="fas fa-info-circle me-2"></i>
+                        Selecione uma rota para visualizar seus pontos de
+                        coleta.
+                      </Alert>
+                    ) : (
+                      <div
+                        className="border rounded p-3"
+                        style={{ maxHeight: "300px", overflowY: "auto" }}
+                      >
+                        {formData.collection_items.map((item, index) => (
+                          <Row key={index} className="mb-2 align-items-center">
+                            <Col md={8}>
+                              <Form.Check
+                                type="checkbox"
+                                id={`point-${index}`}
+                                checked={item.collected}
+                                onChange={(e) =>
+                                  handlePointDataChange(
+                                    index,
+                                    "collected",
+                                    e.target.checked
+                                  )
+                                }
+                                label={
+                                  <span>
+                                    <strong>{item.point_name}</strong>
+                                    <small className="text-muted ms-2">
+                                      (Ordem: {item.sequence_order})
+                                    </small>
+                                  </span>
+                                }
+                              />
+                            </Col>
+                            <Col md={4}>
+                              <Form.Control
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                placeholder="Peso (kg)"
+                                value={item.waste_collected_weight}
+                                onChange={(e) =>
+                                  handlePointDataChange(
+                                    index,
+                                    "waste_collected_weight",
+                                    e.target.value
+                                  )
+                                }
+                                disabled={!item.collected}
+                                size="sm"
+                              />
+                            </Col>
+                          </Row>
+                        ))}
+
+                        {/* Totalizador */}
+                        {formData.collection_items.some(
+                          (item) => item.collected
+                        ) && (
+                          <div className="mt-3 pt-3 border-top">
+                            <Row>
+                              <Col>
+                                <strong>Peso Total: </strong>
+                                {formData.collection_items
+                                  .filter((item) => item.collected)
+                                  .reduce(
+                                    (sum, item) =>
+                                      sum +
+                                      (parseFloat(
+                                        item.waste_collected_weight
+                                      ) || 0),
+                                    0
+                                  )
+                                  .toFixed(2)}{" "}
+                                kg
+                              </Col>
+                            </Row>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </Col>
+                </Row>
+              )}
+
+              {/* Campo de volume total (opcional no modo por ponto) */}
+              {formData.registration_mode === "by_point" &&
+                formData.collection_items.length > 0 && (
+                  <Row className="mt-3">
+                    <Col md={12}>
+                      <Form.Group>
+                        <Form.Label>
+                          Volume Total Coletado (m³)
+                          <small className="text-muted ms-2">(opcional)</small>
+                        </Form.Label>
+                        <Form.Control
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          name="waste_collected_volume"
+                          value={formData.waste_collected_volume}
+                          onChange={handleChange}
+                          placeholder="Ex: 8.5"
+                        />
+                        <Form.Text className="text-muted">
+                          Volume total de resíduos coletados em metros cúbicos
+                        </Form.Text>
+                      </Form.Group>
+                    </Col>
+                  </Row>
+                )}
             </>
           )}
 

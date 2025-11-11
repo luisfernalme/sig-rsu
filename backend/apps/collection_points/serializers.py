@@ -254,9 +254,10 @@ class CollectionRecordSerializer(serializers.ModelSerializer):
     
     def get_route_execution_info(self, obj):
         """
-        Informações da execução da rota
+        Informações da execução da rota (RouteExecution ou Collection)
         """
         try:
+            # Tentar buscar de RouteExecution primeiro (sistema antigo)
             if hasattr(obj, 'route_execution') and obj.route_execution:
                 return {
                     'id': obj.route_execution.id,
@@ -264,7 +265,25 @@ class CollectionRecordSerializer(serializers.ModelSerializer):
                     'vehicle_plate': obj.route_execution.vehicle.license_plate,
                     'driver_name': obj.route_execution.driver.get_full_name()
                 }
-        except Exception:
+            
+            # Buscar de Collection (sistema novo) através de CollectionItem
+            from apps.collections.models import CollectionItem
+            collection_item = CollectionItem.objects.filter(
+                collection_point=obj.collection_point,
+                collection__scheduled_date=obj.collection_date.date(),
+                collected=True
+            ).select_related('collection__route', 'collection__vehicle', 'collection__driver').first()
+            
+            if collection_item and collection_item.collection:
+                coll = collection_item.collection
+                driver_name = coll.driver.name if coll.driver else coll.driver_name
+                return {
+                    'id': coll.id,
+                    'route_name': coll.route.name if coll.route else '—',
+                    'vehicle_plate': coll.vehicle.license_plate if coll.vehicle else '—',
+                    'driver_name': driver_name or '—'
+                }
+        except Exception as e:
             pass
         return None
     

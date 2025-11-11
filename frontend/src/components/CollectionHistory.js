@@ -1,16 +1,28 @@
-import React from 'react';
-import { Card, Badge, ProgressBar, Spinner } from 'react-bootstrap';
-import { toast } from 'react-hot-toast';
+import React from "react";
+import { Card, Badge, Spinner } from "react-bootstrap";
+import { toast } from "react-hot-toast";
 
 const CollectionHistory = ({ collections, loading = false }) => {
   const getStatusBadge = (status) => {
     const statuses = {
-      collected: { label: 'Coletado', variant: 'success', icon: 'check-circle' },
-      partially_collected: { label: 'Parcial', variant: 'warning', icon: 'exclamation-circle' },
-      not_collected: { label: 'Não Coletado', variant: 'danger', icon: 'times-circle' },
-      inaccessible: { label: 'Inacessível', variant: 'secondary', icon: 'ban' },
+      collected: {
+        label: "Coletado",
+        variant: "success",
+        icon: "check-circle",
+      },
+      partially_collected: {
+        label: "Parcial",
+        variant: "warning",
+        icon: "exclamation-circle",
+      },
+      not_collected: {
+        label: "Não Coletado",
+        variant: "danger",
+        icon: "times-circle",
+      },
+      inaccessible: { label: "Inacessível", variant: "secondary", icon: "ban" },
     };
-    
+
     const config = statuses[status] || statuses.collected;
     return (
       <Badge bg={config.variant}>
@@ -22,18 +34,18 @@ const CollectionHistory = ({ collections, loading = false }) => {
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
+    return date.toLocaleDateString("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
     });
   };
 
   const formatTime = (dateString) => {
     const date = new Date(dateString);
-    return date.toLocaleTimeString('pt-BR', {
-      hour: '2-digit',
-      minute: '2-digit',
+    return date.toLocaleTimeString("pt-BR", {
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
@@ -42,9 +54,9 @@ const CollectionHistory = ({ collections, loading = false }) => {
     const today = new Date();
     const diffTime = Math.abs(today - date);
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 0) return 'Hoje';
-    if (diffDays === 1) return 'Ontem';
+
+    if (diffDays === 0) return "Hoje";
+    if (diffDays === 1) return "Ontem";
     if (diffDays < 7) return `${diffDays} dias atrás`;
     if (diffDays < 30) return `${Math.floor(diffDays / 7)} semanas atrás`;
     return `${Math.floor(diffDays / 30)} meses atrás`;
@@ -75,9 +87,11 @@ const CollectionHistory = ({ collections, loading = false }) => {
         <div key={collection.id} className="timeline-item">
           <div className="timeline-marker">
             <div className="timeline-dot"></div>
-            {index < collections.length - 1 && <div className="timeline-line"></div>}
+            {index < collections.length - 1 && (
+              <div className="timeline-line"></div>
+            )}
           </div>
-          
+
           <Card className="timeline-card mb-3">
             <Card.Body>
               <div className="d-flex justify-content-between align-items-start mb-2">
@@ -89,7 +103,9 @@ const CollectionHistory = ({ collections, loading = false }) => {
                       {formatTime(collection.collection_date)}
                     </span>
                   </h6>
-                  <small className="text-muted">{getDaysAgo(collection.collection_date)}</small>
+                  <small className="text-muted">
+                    {getDaysAgo(collection.collection_date)}
+                  </small>
                 </div>
                 {getStatusBadge(collection.status)}
               </div>
@@ -102,21 +118,27 @@ const CollectionHistory = ({ collections, loading = false }) => {
                         <i className="fas fa-route me-1"></i>
                         Rota:
                       </small>
-                      <strong>{collection.route_execution_info.route_name}</strong>
+                      <strong>
+                        {collection.route_execution_info.route_name}
+                      </strong>
                     </div>
                     <div className="col-md-6">
                       <small className="text-muted d-block">
                         <i className="fas fa-truck me-1"></i>
                         Veículo:
                       </small>
-                      <strong>{collection.route_execution_info.vehicle_plate}</strong>
+                      <strong>
+                        {collection.route_execution_info.vehicle_plate}
+                      </strong>
                     </div>
                     <div className="col-12">
                       <small className="text-muted d-block">
                         <i className="fas fa-user me-1"></i>
                         Motorista:
                       </small>
-                      <strong>{collection.route_execution_info.driver_name}</strong>
+                      <strong>
+                        {collection.route_execution_info.driver_name}
+                      </strong>
                     </div>
                   </div>
                 </div>
@@ -129,7 +151,9 @@ const CollectionHistory = ({ collections, loading = false }) => {
                       <div className="d-flex align-items-center">
                         <i className="fas fa-weight-hanging text-primary me-2"></i>
                         <div>
-                          <small className="text-muted d-block">Peso Coletado</small>
+                          <small className="text-muted d-block">
+                            Peso Coletado
+                          </small>
                           <strong>{collection.weight_collected} kg</strong>
                         </div>
                       </div>
@@ -140,43 +164,14 @@ const CollectionHistory = ({ collections, loading = false }) => {
                       <div className="d-flex align-items-center">
                         <i className="fas fa-box text-primary me-2"></i>
                         <div>
-                          <small className="text-muted d-block">Volume Coletado</small>
+                          <small className="text-muted d-block">
+                            Volume Coletado
+                          </small>
                           <strong>{collection.volume_collected} m³</strong>
                         </div>
                       </div>
                     </div>
                   )}
-                </div>
-              )}
-
-              {(collection.fill_level_before != null || collection.fill_level_after != null) && (
-                <div className="mb-3">
-                  <div className="row g-2">
-                    {collection.fill_level_before != null && (
-                      <div className="col-md-6">
-                        <small className="text-muted d-block mb-1">
-                          Nível Antes: <strong>{collection.fill_level_before}%</strong>
-                        </small>
-                        <ProgressBar 
-                          now={collection.fill_level_before} 
-                          variant={collection.fill_level_before > 80 ? 'danger' : collection.fill_level_before > 60 ? 'warning' : 'success'}
-                          style={{ height: '8px' }}
-                        />
-                      </div>
-                    )}
-                    {collection.fill_level_after != null && (
-                      <div className="col-md-6">
-                        <small className="text-muted d-block mb-1">
-                          Nível Depois: <strong>{collection.fill_level_after}%</strong>
-                        </small>
-                        <ProgressBar 
-                          now={collection.fill_level_after} 
-                          variant={collection.fill_level_after > 80 ? 'danger' : collection.fill_level_after > 60 ? 'warning' : 'success'}
-                          style={{ height: '8px' }}
-                        />
-                      </div>
-                    )}
-                  </div>
                 </div>
               )}
 
@@ -189,12 +184,12 @@ const CollectionHistory = ({ collections, loading = false }) => {
 
               {collection.photo && (
                 <div className="mt-2">
-                  <img 
-                    src={collection.photo} 
+                  <img
+                    src={collection.photo}
                     alt="Foto da coleta"
                     className="img-thumbnail"
-                    style={{ maxHeight: '150px', cursor: 'pointer' }}
-                    onClick={() => window.open(collection.photo, '_blank')}
+                    style={{ maxHeight: "150px", cursor: "pointer" }}
+                    onClick={() => window.open(collection.photo, "_blank")}
                   />
                 </div>
               )}
@@ -212,12 +207,12 @@ const CollectionHistory = ({ collections, loading = false }) => {
         .collection-history-timeline {
           position: relative;
         }
-        
+
         .timeline-item {
           display: flex;
           position: relative;
         }
-        
+
         .timeline-marker {
           position: relative;
           flex-shrink: 0;
@@ -226,7 +221,7 @@ const CollectionHistory = ({ collections, loading = false }) => {
           flex-direction: column;
           align-items: center;
         }
-        
+
         .timeline-dot {
           width: 16px;
           height: 16px;
@@ -237,20 +232,20 @@ const CollectionHistory = ({ collections, loading = false }) => {
           z-index: 2;
           margin-top: 8px;
         }
-        
+
         .timeline-line {
           width: 2px;
           flex: 1;
           background: linear-gradient(180deg, #667eea 0%, #e9ecef 100%);
           margin-top: 4px;
         }
-        
+
         .timeline-card {
           flex: 1;
           transition: all 0.3s;
           border: 1px solid #e9ecef;
         }
-        
+
         .timeline-card:hover {
           box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
           transform: translateX(4px);

@@ -1,59 +1,159 @@
-import React, { useState } from 'react';
-import { Modal, Form, Button, Row, Col, Alert } from 'react-bootstrap';
-import MapComponent from './MapComponent';
+import React, { useState } from "react";
+import { Modal, Form, Button, Row, Col, Alert } from "react-bootstrap";
+import MapComponent from "./MapComponent";
 
-const CollectionPointModal = ({ 
-  show, 
-  onHide, 
-  onSave, 
+const CollectionPointModal = ({
+  show,
+  onHide,
+  onSave,
   editPoint = null,
   preselectedLocation = null,
-  loading = false 
+  loading = false,
 }) => {
   const [formData, setFormData] = useState({
-    name: editPoint?.name || '',
-    code: editPoint?.code || '',
-    point_type: editPoint?.point_type || 'container',
-    address: editPoint?.address || '',
-    neighborhood: editPoint?.neighborhood || '',
-    capacity_volume: editPoint?.capacity_volume || '',
-    capacity_weight: editPoint?.capacity_weight || '',
-    collection_frequency: editPoint?.collection_frequency || 'daily',
-    status: editPoint?.status || 'active'
+    name: editPoint?.name || "",
+    code: editPoint?.code || "",
+    point_type: editPoint?.point_type || "container",
+    address: editPoint?.address || "",
+    neighborhood: editPoint?.neighborhood || "",
+    capacity_volume: editPoint?.capacity_volume || "",
+    capacity_weight: editPoint?.capacity_weight || "",
+    collection_frequency: editPoint?.collection_frequency || "daily",
+    status: editPoint?.status || "active",
   });
 
   const [selectedLocation, setSelectedLocation] = useState(
-    editPoint?.latitude_read && editPoint?.longitude_read 
-      ? { latitude: editPoint.latitude_read, longitude: editPoint.longitude_read }
+    editPoint?.latitude_read && editPoint?.longitude_read
+      ? {
+          latitude: editPoint.latitude_read,
+          longitude: editPoint.longitude_read,
+        }
       : preselectedLocation
   );
 
   const [showLocationHelp, setShowLocationHelp] = useState(false);
+  const [loadingAddress, setLoadingAddress] = useState(false);
+
+  // Função para buscar endereço a partir das coordenadas (Geocodificação Reversa)
+  const fetchAddressFromCoordinates = async (latitude, longitude) => {
+    try {
+      setLoadingAddress(true);
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
+        {
+          headers: {
+            "Accept-Language": "pt-BR,pt;q=0.9",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Erro ao buscar endereço");
+      }
+
+      const data = await response.json();
+
+      if (data && data.address) {
+        const address = data.address;
+        const street = address.road || address.street || "";
+        const houseNumber = address.house_number || "";
+        const fullAddress = houseNumber ? `${street}, ${houseNumber}` : street;
+        const neighborhood =
+          address.suburb || address.neighbourhood || address.quarter || "";
+
+        // Atualizar os campos de endereço e bairro
+        setFormData((prev) => ({
+          ...prev,
+          address: fullAddress || data.display_name || "",
+          neighborhood: neighborhood || address.city_district || "",
+        }));
+      }
+    } catch (error) {
+      console.error("Erro ao buscar endereço:", error);
+      // Não mostrar erro para o usuário, apenas falha silenciosa
+    } finally {
+      setLoadingAddress(false);
+    }
+  };
+
+  // Atualizar formulário quando editPoint mudar
+  React.useEffect(() => {
+    if (editPoint) {
+      setFormData({
+        name: editPoint.name || "",
+        code: editPoint.code || "",
+        point_type: editPoint.point_type || "container",
+        address: editPoint.address || "",
+        neighborhood: editPoint.neighborhood || "",
+        capacity_volume: editPoint.capacity_volume || "",
+        capacity_weight: editPoint.capacity_weight || "",
+        collection_frequency: editPoint.collection_frequency || "daily",
+        status: editPoint.status || "active",
+      });
+
+      if (editPoint.latitude_read && editPoint.longitude_read) {
+        setSelectedLocation({
+          latitude: editPoint.latitude_read,
+          longitude: editPoint.longitude_read,
+        });
+      } else if (editPoint.latitude && editPoint.longitude) {
+        setSelectedLocation({
+          latitude: editPoint.latitude,
+          longitude: editPoint.longitude,
+        });
+      }
+    } else {
+      // Resetar formulário para novo ponto
+      setFormData({
+        name: "",
+        code: "",
+        point_type: "container",
+        address: "",
+        neighborhood: "",
+        capacity_volume: "",
+        capacity_weight: "",
+        collection_frequency: "daily",
+        status: "active",
+      });
+      setSelectedLocation(preselectedLocation);
+    }
+  }, [editPoint, preselectedLocation]);
 
   // Atualizar localização quando preselectedLocation mudar
   React.useEffect(() => {
-    if (preselectedLocation) {
+    if (preselectedLocation && !editPoint) {
       setSelectedLocation(preselectedLocation);
       setShowLocationHelp(false);
+      // Buscar endereço automaticamente para novo ponto
+      fetchAddressFromCoordinates(
+        preselectedLocation.latitude,
+        preselectedLocation.longitude
+      );
     }
-  }, [preselectedLocation]);
+  }, [preselectedLocation, editPoint]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
-  const handleMapClick = (location) => {
+  const handleMapClick = async (location) => {
     setSelectedLocation(location);
     setShowLocationHelp(false);
+
+    // Buscar endereço automaticamente quando não estiver editando um ponto
+    // ou se os campos de endereço estiverem vazios
+    if (!editPoint || (!formData.address && !formData.neighborhood)) {
+      await fetchAddressFromCoordinates(location.latitude, location.longitude);
+    }
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
+
     if (!selectedLocation) {
       setShowLocationHelp(true);
       return;
@@ -62,7 +162,7 @@ const CollectionPointModal = ({
     const pointData = {
       ...formData,
       latitude: selectedLocation.latitude,
-      longitude: selectedLocation.longitude
+      longitude: selectedLocation.longitude,
     };
 
     onSave(pointData);
@@ -70,15 +170,15 @@ const CollectionPointModal = ({
 
   const handleClose = () => {
     setFormData({
-      name: '',
-      code: '',
-      point_type: 'container',
-      address: '',
-      neighborhood: '',
-      capacity_volume: '',
-      capacity_weight: '',
-      collection_frequency: 'daily',
-      status: 'active'
+      name: "",
+      code: "",
+      point_type: "container",
+      address: "",
+      neighborhood: "",
+      capacity_volume: "",
+      capacity_weight: "",
+      collection_frequency: "daily",
+      status: "active",
     });
     setSelectedLocation(null);
     setShowLocationHelp(false);
@@ -90,7 +190,7 @@ const CollectionPointModal = ({
       <Modal.Header closeButton>
         <Modal.Title>
           <i className="fas fa-map-marker-alt me-2"></i>
-          {editPoint ? 'Editar Ponto de Coleta' : 'Novo Ponto de Coleta'}
+          {editPoint ? "Editar Ponto de Coleta" : "Novo Ponto de Coleta"}
         </Modal.Title>
       </Modal.Header>
 
@@ -168,14 +268,26 @@ const CollectionPointModal = ({
               </Row>
 
               <Form.Group className="mb-3">
-                <Form.Label>Endereço</Form.Label>
+                <Form.Label>
+                  Endereço
+                  {loadingAddress && (
+                    <span className="text-muted ms-2">
+                      <i className="fas fa-spinner fa-spin"></i> Buscando
+                      endereço...
+                    </span>
+                  )}
+                </Form.Label>
                 <Form.Control
                   type="text"
                   name="address"
                   value={formData.address}
                   onChange={handleInputChange}
                   placeholder="Ex: Rua das Flores, 123"
+                  disabled={loadingAddress}
                 />
+                <Form.Text className="text-muted">
+                  Clique no mapa para preencher automaticamente
+                </Form.Text>
               </Form.Group>
 
               <Form.Group className="mb-3">
@@ -186,6 +298,7 @@ const CollectionPointModal = ({
                   value={formData.neighborhood}
                   onChange={handleInputChange}
                   placeholder="Ex: Centro"
+                  disabled={loadingAddress}
                 />
               </Form.Group>
 
@@ -241,43 +354,53 @@ const CollectionPointModal = ({
 
               {!editPoint && !selectedLocation && (
                 <Alert variant="info" className="mb-3">
-                  <i className="fas fa-info-circle me-2"></i>
-                  A localização foi definida quando você clicou no mapa. Você pode ajustá-la clicando em um novo local.
+                  <i className="fas fa-info-circle me-2"></i>A localização foi
+                  definida quando você clicou no mapa. Você pode ajustá-la
+                  clicando em um novo local.
                 </Alert>
               )}
 
               {showLocationHelp && (
                 <Alert variant="warning" className="mb-3">
                   <i className="fas fa-exclamation-triangle me-2"></i>
-                  <strong>Selecione uma localização!</strong> Clique no mapa para definir onde o ponto de coleta será localizado.
+                  <strong>Selecione uma localização!</strong> Clique no mapa
+                  para definir onde o ponto de coleta será localizado.
                 </Alert>
               )}
 
               {selectedLocation && (
                 <Alert variant="success" className="mb-3">
                   <i className="fas fa-map-pin me-2"></i>
-                  <strong>Localização selecionada:</strong><br/>
-                  Latitude: {selectedLocation.latitude.toFixed(6)}<br/>
+                  <strong>Localização selecionada:</strong>
+                  <br />
+                  Latitude: {selectedLocation.latitude.toFixed(6)}
+                  <br />
                   Longitude: {selectedLocation.longitude.toFixed(6)}
                 </Alert>
               )}
 
-              <div className="border rounded p-2" style={{ backgroundColor: '#f8f9fa' }}>
+              <div
+                className="border rounded p-2"
+                style={{ backgroundColor: "#f8f9fa" }}
+              >
                 <small className="text-muted d-block mb-2">
                   <i className="fas fa-mouse-pointer me-1"></i>
-                  {editPoint 
-                    ? 'Clique no mapa para ajustar a localização do ponto de coleta' 
-                    : 'Clique no mapa para ajustar a localização, se necessário'
-                  }
+                  {editPoint
+                    ? "Clique no mapa para ajustar a localização do ponto de coleta"
+                    : "Clique no mapa para ajustar a localização, se necessário"}
                 </small>
-                
+
                 <MapComponent
-                  center={selectedLocation ? [selectedLocation.latitude, selectedLocation.longitude] : [-23.5505, -46.6333]}
+                  center={
+                    selectedLocation
+                      ? [selectedLocation.latitude, selectedLocation.longitude]
+                      : [-23.5505, -46.6333]
+                  }
                   zoom={selectedLocation ? 15 : 12}
                   points={[]}
                   onMapClick={handleMapClick}
                   selectedLocation={selectedLocation}
-                  style={{ height: '400px', width: '100%' }}
+                  style={{ height: "400px", width: "100%" }}
                 />
               </div>
             </Col>
@@ -292,13 +415,16 @@ const CollectionPointModal = ({
           <Button variant="primary" type="submit" disabled={loading}>
             {loading ? (
               <>
-                <div className="spinner-border spinner-border-sm me-2" role="status"></div>
+                <div
+                  className="spinner-border spinner-border-sm me-2"
+                  role="status"
+                ></div>
                 Salvando...
               </>
             ) : (
               <>
                 <i className="fas fa-save me-2"></i>
-                {editPoint ? 'Atualizar' : 'Criar'} Ponto
+                {editPoint ? "Atualizar" : "Criar"} Ponto
               </>
             )}
           </Button>
