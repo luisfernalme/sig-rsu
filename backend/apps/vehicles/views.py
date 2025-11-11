@@ -5,9 +5,9 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters
 from django.db.models import Count, Q, Sum
 from datetime import date, timedelta
-from .models import Driver, Vehicle, VehicleGPSTracker, VehicleMaintenance
+from .models import Driver, Vehicle, VehicleMaintenance
 from .serializers import (
-    DriverSerializer, VehicleSerializer, VehicleDetailSerializer, VehicleGPSTrackerSerializer,
+    DriverSerializer, VehicleSerializer, VehicleDetailSerializer,
     VehicleMaintenanceSerializer, VehicleStatsSerializer
 )
 
@@ -163,27 +163,6 @@ class VehicleViewSet(viewsets.ModelViewSet):
         })
     
     @action(detail=True, methods=['get'])
-    def gps_history(self, request, pk=None):
-        """
-        Histórico GPS do veículo
-        """
-        vehicle = self.get_object()
-        days = int(request.query_params.get('days', 7))
-        
-        since_date = date.today() - timedelta(days=days)
-        gps_tracks = vehicle.gps_tracks.filter(
-            timestamp__date__gte=since_date
-        ).order_by('-timestamp')
-        
-        serializer = VehicleGPSTrackerSerializer(gps_tracks, many=True)
-        return Response(serializer.data)
-
-    # Alias compatível com frontend: /vehicles/{id}/tracking/
-    @action(detail=True, methods=['get'], url_path='tracking')
-    def tracking(self, request, pk=None):
-        return self.gps_history(request, pk)
-    
-    @action(detail=True, methods=['get'])
     def maintenance_history(self, request, pk=None):
         """
         Histórico de manutenções do veículo
@@ -193,77 +172,6 @@ class VehicleViewSet(viewsets.ModelViewSet):
         
         serializer = VehicleMaintenanceSerializer(maintenances, many=True)
         return Response(serializer.data)
-
-
-class VehicleGPSTrackerViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet para rastreamento GPS
-    """
-    queryset = VehicleGPSTracker.objects.all()
-    serializer_class = VehicleGPSTrackerSerializer
-    permission_classes = [permissions.IsAuthenticated]
-    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
-    filterset_fields = ['vehicle']
-    ordering_fields = ['timestamp']
-    ordering = ['-timestamp']
-    
-    @action(detail=False, methods=['get'])
-    def current_positions(self, request):
-        """
-        Posições atuais de todos os veículos
-        """
-        from django.db.models import Max
-        
-        # Buscar a posição mais recente de cada veículo
-        latest_positions = VehicleGPSTracker.objects.values('vehicle').annotate(
-            latest_timestamp=Max('timestamp')
-        )
-        
-        current_positions = []
-        for pos in latest_positions:
-            try:
-                gps_track = VehicleGPSTracker.objects.get(
-                    vehicle=pos['vehicle'],
-                    timestamp=pos['latest_timestamp']
-                )
-                current_positions.append(gps_track)
-            except VehicleGPSTracker.DoesNotExist:
-                continue
-        
-        serializer = self.get_serializer(current_positions, many=True)
-        return Response(serializer.data)
-    
-    @action(detail=False, methods=['post'])
-    def bulk_update(self, request):
-        """
-        Atualização em lote de posições GPS
-        """
-        gps_data = request.data.get('gps_tracks', [])
-        
-        if not gps_data:
-            return Response({
-                'error': 'Dados GPS são obrigatórios.'
-            }, status=status.HTTP_400_BAD_REQUEST)
-        
-        created_tracks = []
-        errors = []
-        
-        for track_data in gps_data:
-            serializer = self.get_serializer(data=track_data)
-            if serializer.is_valid():
-                track = serializer.save()
-                created_tracks.append(track)
-            else:
-                errors.append({
-                    'data': track_data,
-                    'errors': serializer.errors
-                })
-        
-        return Response({
-            'created': len(created_tracks),
-            'errors': errors,
-            'tracks': VehicleGPSTrackerSerializer(created_tracks, many=True).data
-        })
 
 
 class VehicleMaintenanceViewSet(viewsets.ModelViewSet):

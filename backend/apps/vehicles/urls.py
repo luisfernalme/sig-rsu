@@ -5,7 +5,6 @@ from . import views
 router = DefaultRouter()
 router.register(r'drivers', views.DriverViewSet)
 router.register(r'vehicles', views.VehicleViewSet)
-router.register(r'gps-tracking', views.VehicleGPSTrackerViewSet)
 router.register(r'maintenance', views.VehicleMaintenanceViewSet)
 
 urlpatterns = [

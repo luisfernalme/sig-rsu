@@ -133,31 +133,6 @@ class Vehicle(models.Model):
         return f"{self.license_plate} - {self.brand} {self.model}"
 
 
-class VehicleGPSTracker(models.Model):
-    """
-    Rastreamento GPS dos veículos
-    """
-    vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE, related_name='gps_tracks')
-    latitude = models.FloatField(verbose_name='Latitude')
-    longitude = models.FloatField(verbose_name='Longitude')
-    speed = models.FloatField(null=True, blank=True, verbose_name='Velocidade (km/h)')
-    heading = models.FloatField(null=True, blank=True, verbose_name='Direção (graus)')
-    altitude = models.FloatField(null=True, blank=True, verbose_name='Altitude (m)')
-    timestamp = models.DateTimeField(verbose_name='Timestamp')
-    
-    class Meta:
-        db_table = 'vehicle_gps_tracks'
-        verbose_name = 'Rastreamento GPS'
-        verbose_name_plural = 'Rastreamentos GPS'
-        ordering = ['-timestamp']
-        indexes = [
-            models.Index(fields=['vehicle', '-timestamp']),
-        ]
-    
-    def __str__(self):
-        return f"{self.vehicle.license_plate} - {self.timestamp}"
-
-
 class VehicleMaintenance(models.Model):
     """
     Registro de manutenções dos veículos

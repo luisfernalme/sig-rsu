@@ -4,7 +4,7 @@ from django.contrib.gis.geos import Point, LineString
 from datetime import timedelta, datetime, date
 import random
 
-from apps.vehicles.models import Vehicle, VehicleGPSTracker, VehicleMaintenance
+from apps.vehicles.models import Vehicle, VehicleMaintenance
 from apps.routes.models import Route, RouteSchedule, RouteExecution
 from apps.collection_points.models import (
     CollectionPoint, WasteType, CollectionRecord, 
@@ -46,9 +46,6 @@ class Command(BaseCommand):
         # Criar rotas
         routes = self.create_routes(admin_user, collection_points)
         
-        # Criar dados de GPS
-        self.create_gps_data(vehicles)
-        
         # Criar manutenções
         self.create_maintenance_data(vehicles)
         
@@ -66,7 +63,7 @@ class Command(BaseCommand):
         """Remove todos os dados existentes"""
         models_to_clear = [
             CollectionRecord, CollectionPointRoute, CollectionPointWasteType,
-            RouteExecution, RouteSchedule, VehicleGPSTracker, VehicleMaintenance,
+            RouteExecution, RouteSchedule, VehicleMaintenance,
             CollectionPoint, Route, Vehicle, WasteType
         ]
         
@@ -258,26 +255,6 @@ class Command(BaseCommand):
         
         self.stdout.write(f'Criadas {len(routes)} rotas')
         return routes
-
-    def create_gps_data(self, vehicles):
-        """Cria dados de GPS para os veículos"""
-        for vehicle in vehicles[:2]:  # Apenas para alguns veículos
-            base_coords = [(-46.6333, -23.5500), (-46.6400, -23.5600)]
-            
-            for i in range(10):  # 10 pontos GPS por veículo
-                lng = base_coords[0][0] + random.uniform(-0.01, 0.01)
-                lat = base_coords[0][1] + random.uniform(-0.01, 0.01)
-                
-                VehicleGPSTracker.objects.create(
-                    vehicle=vehicle,
-                    latitude=lat,
-                    longitude=lng,
-                    speed=random.uniform(0, 60),
-                    heading=random.uniform(0, 360),
-                    timestamp=datetime.now() - timedelta(hours=random.randint(1, 24))
-                )
-        
-        self.stdout.write('Dados de GPS criados')
 
     def create_maintenance_data(self, vehicles):
         """Cria registros de manutenção"""

@@ -159,11 +159,6 @@ export const vehiclesAPI = {
     const response = await api.delete(`/vehicles/${id}/`);
     return response.data;
   },
-
-  getVehicleTracking: async (id) => {
-    const response = await api.get(`/vehicles/${id}/tracking/`);
-    return response.data;
-  },
 };
 
 // Serviços de motoristas

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from .models import Driver, Vehicle, VehicleGPSTracker, VehicleMaintenance
+from .models import Driver, Vehicle, VehicleMaintenance
 
 User = get_user_model()
 
@@ -97,40 +97,6 @@ class VehicleSerializer(serializers.ModelSerializer):
         return value.upper()
 
 
-class VehicleGPSTrackerSerializer(serializers.ModelSerializer):
-    """
-    Serializer para rastreamento GPS
-    """
-    vehicle_plate = serializers.CharField(source='vehicle.license_plate', read_only=True)
-    
-    class Meta:
-        model = VehicleGPSTracker
-        fields = [
-            'id', 'vehicle', 'vehicle_plate', 'latitude', 'longitude',
-            'speed', 'heading', 'altitude', 'timestamp'
-        ]
-        read_only_fields = ['id']
-    
-    def validate(self, attrs):
-        """
-        Validações para dados GPS
-        """
-        lat = attrs.get('latitude')
-        lng = attrs.get('longitude')
-        
-        if lat and (lat < -90 or lat > 90):
-            raise serializers.ValidationError("Latitude deve estar entre -90 e 90.")
-        
-        if lng and (lng < -180 or lng > 180):
-            raise serializers.ValidationError("Longitude deve estar entre -180 e 180.")
-        
-        speed = attrs.get('speed')
-        if speed and speed < 0:
-            raise serializers.ValidationError("Velocidade não pode ser negativa.")
-        
-        return attrs
-
-
 class VehicleMaintenanceSerializer(serializers.ModelSerializer):
     """
     Serializer para manutenção de veículos
@@ -171,22 +137,13 @@ class VehicleDetailSerializer(VehicleSerializer):
     """
     Serializer detalhado para veículos (inclui relacionamentos)
     """
-    gps_tracks = VehicleGPSTrackerSerializer(many=True, read_only=True)
     maintenances = VehicleMaintenanceSerializer(many=True, read_only=True)
-    recent_gps = serializers.SerializerMethodField()
     next_maintenance_info = serializers.SerializerMethodField()
     
     class Meta(VehicleSerializer.Meta):
         fields = VehicleSerializer.Meta.fields + [
-            'gps_tracks', 'maintenances', 'recent_gps', 'next_maintenance_info'
+            'maintenances', 'next_maintenance_info'
         ]
-    
-    def get_recent_gps(self, obj):
-        """
-        Últimas 10 posições GPS
-        """
-        recent = obj.gps_tracks.all()[:10]
-        return VehicleGPSTrackerSerializer(recent, many=True).data
     
     def get_next_maintenance_info(self, obj):
         """

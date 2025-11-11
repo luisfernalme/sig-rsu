@@ -15,7 +15,6 @@ import {
 } from "react-bootstrap";
 import { vehiclesAPI, driversAPI } from "../services/api";
 import VehicleModal from "../components/VehicleModal";
-import VehicleTrackingModal from "../components/VehicleTrackingModal";
 import DriverModal from "../components/DriverModal";
 
 const STATUS_MAP = {
@@ -53,8 +52,6 @@ const Vehicles = () => {
   const [errorVehicles, setErrorVehicles] = useState(null);
   const [showVehicleModal, setShowVehicleModal] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState(null);
-  const [showTracking, setShowTracking] = useState(false);
-  const [trackingVehicle, setTrackingVehicle] = useState(null);
   const [vehicleFilters, setVehicleFilters] = useState({
     search: "",
     status: "",
@@ -140,11 +137,6 @@ const Vehicles = () => {
   const openEditVehicle = (v) => {
     setEditingVehicle(v);
     setShowVehicleModal(true);
-  };
-
-  const openTracking = (v) => {
-    setTrackingVehicle(v);
-    setShowTracking(true);
   };
 
   const handleVehicleModalSave = async (payload) => {
@@ -467,15 +459,6 @@ const Vehicles = () => {
                       Editar
                     </Button>
                     <Button
-                      variant="outline-info"
-                      size="sm"
-                      className="flex-fill"
-                      onClick={() => openTracking(vehicle)}
-                    >
-                      <i className="fas fa-map-marker-alt me-1"></i>
-                      Rastrear
-                    </Button>
-                    <Button
                       variant="outline-danger"
                       size="sm"
                       className="flex-fill"
@@ -708,11 +691,6 @@ const Vehicles = () => {
         onHide={() => setShowVehicleModal(false)}
         onSave={handleVehicleModalSave}
         vehicle={editingVehicle}
-      />
-      <VehicleTrackingModal
-        show={showTracking}
-        onHide={() => setShowTracking(false)}
-        vehicle={trackingVehicle}
       />
       <DriverModal
         show={showDriverModal}
