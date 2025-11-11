@@ -231,35 +231,48 @@ const CollectionDetailModal = ({ show, onHide, collection }) => {
                   <Col xs={12}>
                     <h6 className="text-muted">Pontos da Rota</h6>
                     <ListGroup>
-                      {collection.collection_items.map((item) => (
-                        <ListGroup.Item
-                          key={item.id}
-                          className="d-flex justify-content-between align-items-center"
-                        >
-                          <div>
-                            <strong>{item.collection_point_name}</strong>
-                            <br />
-                            <small className="text-muted">
-                              {item.collection_point_address}
-                            </small>
-                            {item.weight > 0 && (
-                              <>
-                                <br />
-                                <small className="text-primary">
-                                  <i className="fas fa-weight me-1"></i>
-                                  {item.weight} kg
-                                </small>
-                              </>
+                      {/* Remover duplicatas baseado no ID ou collection_point */}
+                      {collection.collection_items
+                        .filter(
+                          (item, index, self) =>
+                            index ===
+                            self.findIndex(
+                              (t) =>
+                                t.id === item.id ||
+                                t.collection_point === item.collection_point
+                            )
+                        )
+                        .map((item) => (
+                          <ListGroup.Item
+                            key={`item-${
+                              item.id || item.collection_point
+                            }-${Math.random()}`}
+                            className="d-flex justify-content-between align-items-center"
+                          >
+                            <div>
+                              <strong>{item.collection_point_name}</strong>
+                              <br />
+                              <small className="text-muted">
+                                {item.collection_point_address}
+                              </small>
+                              {item.weight > 0 && (
+                                <>
+                                  <br />
+                                  <small className="text-primary">
+                                    <i className="fas fa-weight me-1"></i>
+                                    {item.weight} kg
+                                  </small>
+                                </>
+                              )}
+                            </div>
+                            {item.collected && (
+                              <Badge bg="success">
+                                <i className="fas fa-check me-1"></i>
+                                Coletado
+                              </Badge>
                             )}
-                          </div>
-                          {item.collected && (
-                            <Badge bg="success">
-                              <i className="fas fa-check me-1"></i>
-                              Coletado
-                            </Badge>
-                          )}
-                        </ListGroup.Item>
-                      ))}
+                          </ListGroup.Item>
+                        ))}
                     </ListGroup>
                   </Col>
                 </Row>
