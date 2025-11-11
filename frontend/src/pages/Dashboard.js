@@ -667,57 +667,6 @@ const Dashboard = () => {
           </Card>
         </Col>
       </Row>
-
-      {/* Resumo por status */}
-      <Row className="mb-4">
-        <Col xs={12}>
-          <Card className="shadow-sm">
-            <Card.Header className="bg-white">
-              <h5 className="mb-0">
-                <i className="fas fa-info-circle me-2 text-primary"></i>
-                Resumo de Coletas por Status
-              </h5>
-            </Card.Header>
-            <Card.Body>
-              <Row className="text-center">
-                <Col xs={6} md={3} className="mb-3">
-                  <div className="p-3 bg-warning bg-opacity-10 rounded">
-                    <i className="fas fa-clock fa-2x text-warning mb-2"></i>
-                    <h3 className="mb-0">{stats.collectionsPending}</h3>
-                    <small className="text-muted">Pendentes</small>
-                  </div>
-                </Col>
-                <Col xs={6} md={3} className="mb-3">
-                  <div className="p-3 bg-info bg-opacity-10 rounded">
-                    <i className="fas fa-spinner fa-2x text-info mb-2"></i>
-                    <h3 className="mb-0">{stats.collectionsInProgress}</h3>
-                    <small className="text-muted">Em Andamento</small>
-                  </div>
-                </Col>
-                <Col xs={6} md={3} className="mb-3">
-                  <div className="p-3 bg-success bg-opacity-10 rounded">
-                    <i className="fas fa-check-circle fa-2x text-success mb-2"></i>
-                    <h3 className="mb-0">{stats.collectionsCompleted}</h3>
-                    <small className="text-muted">Concluídas</small>
-                  </div>
-                </Col>
-                <Col xs={6} md={3} className="mb-3">
-                  <div className="p-3 bg-secondary bg-opacity-10 rounded">
-                    <i className="fas fa-ban fa-2x text-secondary mb-2"></i>
-                    <h3 className="mb-0">
-                      {
-                        collections.filter((c) => c.status === "cancelled")
-                          .length
-                      }
-                    </h3>
-                    <small className="text-muted">Canceladas</small>
-                  </div>
-                </Col>
-              </Row>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
     </Container>
   );
 };

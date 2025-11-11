@@ -1,24 +1,30 @@
-import React, { useState, useEffect } from 'react';
-import { Modal, Button, Form, Row, Col, Alert, Spinner } from 'react-bootstrap';
-import { MapContainer, TileLayer, Marker, Polyline, useMapEvents } from 'react-leaflet';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+import React, { useState, useEffect } from "react";
+import { Modal, Button, Form, Row, Col, Alert, Spinner } from "react-bootstrap";
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  Polyline,
+  useMapEvents,
+} from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 
 // Fix para ícones do Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
-  iconRetinaUrl: require('leaflet/dist/images/marker-icon-2x.png'),
-  iconUrl: require('leaflet/dist/images/marker-icon.png'),
-  shadowUrl: require('leaflet/dist/images/marker-shadow.png'),
+  iconRetinaUrl: require("leaflet/dist/images/marker-icon-2x.png"),
+  iconUrl: require("leaflet/dist/images/marker-icon.png"),
+  shadowUrl: require("leaflet/dist/images/marker-shadow.png"),
 });
 
 const RouteModal = ({ show, onHide, onSave, route, collectionPoints = [] }) => {
   const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    frequency: 'daily',
-    status: 'active',
-    estimated_duration: '01:00:00',
+    name: "",
+    description: "",
+    frequency: "daily",
+    status: "active",
+    estimated_duration: "01:00:00",
     estimated_distance: 0,
     collection_points: [],
   });
@@ -32,25 +38,28 @@ const RouteModal = ({ show, onHide, onSave, route, collectionPoints = [] }) => {
 
   useEffect(() => {
     if (!show) return; // Só executar quando modal está visível
-    
-    console.log('RouteModal mounted/updated');
-    console.log('Pontos de coleta recebidos:', collectionPoints.length);
-    console.log('Rota recebida:', route);
-    
+
+    console.log("RouteModal mounted/updated");
+    console.log("Pontos de coleta recebidos:", collectionPoints.length);
+    console.log("Rota recebida:", route);
+
     if (route) {
       setFormData({
-        name: route.name || '',
-        description: route.description || '',
-        frequency: route.frequency || 'daily',
-        status: route.status || 'active',
-        estimated_duration: route.estimated_duration || '01:00:00',
+        name: route.name || "",
+        description: route.description || "",
+        frequency: route.frequency || "daily",
+        status: route.status || "active",
+        estimated_duration: route.estimated_duration || "01:00:00",
         estimated_distance: route.estimated_distance || 0,
         collection_points: route.collection_points || [],
       });
 
       // Se a rota tem geometria, extrair os pontos
       if (route.geometry && route.geometry.coordinates) {
-        const points = route.geometry.coordinates.map(coord => [coord[1], coord[0]]);
+        const points = route.geometry.coordinates.map((coord) => [
+          coord[1],
+          coord[0],
+        ]);
         setRoutePoints(points);
         if (points.length > 0) {
           setMapCenter(points[0]);
@@ -59,18 +68,18 @@ const RouteModal = ({ show, onHide, onSave, route, collectionPoints = [] }) => {
 
       // Pontos de coleta selecionados
       if (route.collection_points) {
-        const selectedIds = route.collection_points.map(cp => cp.id || cp);
+        const selectedIds = route.collection_points.map((cp) => cp.id || cp);
         setSelectedPoints(selectedIds);
-        console.log('Pontos selecionados da rota:', selectedIds);
+        console.log("Pontos selecionados da rota:", selectedIds);
       }
     } else {
       // Reset para nova rota
       setFormData({
-        name: '',
-        description: '',
-        frequency: 'daily',
-        status: 'active',
-        estimated_duration: '01:00:00',
+        name: "",
+        description: "",
+        frequency: "daily",
+        status: "active",
+        estimated_duration: "01:00:00",
         estimated_distance: 0,
         collection_points: [],
       });
@@ -81,13 +90,13 @@ const RouteModal = ({ show, onHide, onSave, route, collectionPoints = [] }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
     // Limpar erro do campo
     if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: null }));
+      setErrors((prev) => ({ ...prev, [name]: null }));
     }
   };
 
@@ -96,13 +105,13 @@ const RouteModal = ({ show, onHide, onSave, route, collectionPoints = [] }) => {
     if (e.target.checked) {
       const newPoints = [...selectedPoints, pointId];
       setSelectedPoints(newPoints);
-      
+
       // Automaticamente criar/atualizar rota com os pontos selecionados
       updateRouteFromPoints(newPoints);
     } else {
-      const newPoints = selectedPoints.filter(id => id !== pointId);
+      const newPoints = selectedPoints.filter((id) => id !== pointId);
       setSelectedPoints(newPoints);
-      
+
       // Atualizar rota removendo o ponto
       updateRouteFromPoints(newPoints);
     }
@@ -110,63 +119,70 @@ const RouteModal = ({ show, onHide, onSave, route, collectionPoints = [] }) => {
 
   // Função para atualizar rota baseado nos pontos selecionados
   const updateRouteFromPoints = (pointIds) => {
-    console.log('updateRouteFromPoints chamada com:', pointIds);
-    console.log('collectionPoints disponíveis:', collectionPoints);
-    
+    console.log("updateRouteFromPoints chamada com:", pointIds);
+    console.log("collectionPoints disponíveis:", collectionPoints);
+
     if (pointIds.length === 0) {
       setRoutePoints([]);
-      setFormData(prev => ({ ...prev, estimated_distance: 0 }));
+      setFormData((prev) => ({ ...prev, estimated_distance: 0 }));
       return;
     }
 
     // Pegar coordenadas dos pontos selecionados na ordem
     const points = pointIds
-      .map(id => {
-        const point = collectionPoints.find(p => p.id === id);
+      .map((id) => {
+        const point = collectionPoints.find((p) => p.id === id);
         console.log(`Procurando ponto ${id}:`, point);
         return point;
       })
-      .filter(p => {
+      .filter((p) => {
         const hasLocation = p && p.location;
-        console.log('Ponto tem location?', hasLocation, p);
-        
+        console.log("Ponto tem location?", hasLocation, p);
+
         if (!hasLocation) return false;
-        
+
         // Verificar diferentes formatos de coordenadas
         if (p.location.coordinates) {
-          console.log('Coordenadas encontradas:', p.location.coordinates);
+          console.log("Coordenadas encontradas:", p.location.coordinates);
           return true;
         }
-        if (p.location.type === 'Point' && p.location.coordinates) {
-          console.log('Coordenadas GeoJSON encontradas:', p.location.coordinates);
+        if (p.location.type === "Point" && p.location.coordinates) {
+          console.log(
+            "Coordenadas GeoJSON encontradas:",
+            p.location.coordinates
+          );
           return true;
         }
         if (p.latitude && p.longitude) {
-          console.log('Lat/Lng encontrados:', p.latitude, p.longitude);
+          console.log("Lat/Lng encontrados:", p.latitude, p.longitude);
           return true;
         }
-        
-        console.log('Formato de location não reconhecido:', p.location);
+
+        console.log("Formato de location não reconhecido:", p.location);
         return false;
       })
-      .map(p => {
+      .map((p) => {
         // Suportar diferentes formatos de coordenadas
         if (p.location.coordinates) {
           const coords = p.location.coordinates;
           // GeoJSON usa [lng, lat]
           const [lng, lat] = coords;
-          console.log(`Convertendo ${p.name}: [${lng}, ${lat}] -> [${lat}, ${lng}]`);
+          console.log(
+            `Convertendo ${p.name}: [${lng}, ${lat}] -> [${lat}, ${lng}]`
+          );
           return [lat, lng];
         }
         if (p.latitude && p.longitude) {
-          console.log(`Usando lat/lng direto de ${p.name}: [${p.latitude}, ${p.longitude}]`);
+          console.log(
+            `Usando lat/lng direto de ${p.name}: [${p.latitude}, ${p.longitude}]`
+          );
           return [p.latitude, p.longitude];
         }
         return null;
       })
-      .filter(p => p !== null);
+      .filter((p) => p !== null);
 
-    console.log('Pontos processados para rota:', points);
+    console.log("Pontos processados para rota:", points);
 
     if (points.length >= 1) {
       // Centralizar mapa no primeiro ponto
@@ -177,27 +193,27 @@ const RouteModal = ({ show, onHide, onSave, route, collectionPoints = [] }) => {
       // Se houver pelo menos 2 pontos, buscar rota
       if (points.length >= 2) {
         setLoading(true);
-        
+
         if (useRealRouting) {
           // Buscar rota real seguindo as ruas
           fetchRealRoute(points)
-            .then(result => {
-              console.log('Rota real obtida:', result);
+            .then((result) => {
+              console.log("Rota real obtida:", result);
               setRoutePoints(result.points);
-              setFormData(prev => ({
+              setFormData((prev) => ({
                 ...prev,
                 estimated_distance: result.distance,
-                estimated_duration: result.duration || prev.estimated_duration
+                estimated_duration: result.duration || prev.estimated_duration,
               }));
             })
-            .catch(error => {
-              console.error('Erro ao obter rota:', error);
+            .catch((error) => {
+              console.error("Erro ao obter rota:", error);
               // Fallback: usar linha reta
               setRoutePoints(points);
               const distance = calculateTotalDistanceHaversine(points);
-              setFormData(prev => ({
+              setFormData((prev) => ({
                 ...prev,
-                estimated_distance: distance
+                estimated_distance: distance,
               }));
             })
             .finally(() => {
@@ -207,9 +223,9 @@ const RouteModal = ({ show, onHide, onSave, route, collectionPoints = [] }) => {
           // Usar linha reta entre pontos
           setRoutePoints(points);
           const distance = calculateTotalDistanceHaversine(points);
-          setFormData(prev => ({
+          setFormData((prev) => ({
             ...prev,
-            estimated_distance: distance
+            estimated_distance: distance,
           }));
           setLoading(false);
         }
@@ -218,7 +234,7 @@ const RouteModal = ({ show, onHide, onSave, route, collectionPoints = [] }) => {
         setRoutePoints(points);
       }
     } else {
-      console.warn('Nenhum ponto válido encontrado!');
+      console.warn("Nenhum ponto válido encontrado!");
       setRoutePoints([]);
     }
   };
@@ -226,21 +242,23 @@ const RouteModal = ({ show, onHide, onSave, route, collectionPoints = [] }) => {
   // Simplificar pontos da rota (Douglas-Peucker simplificado)
   const simplifyRoute = (points, maxPoints = 200) => {
     if (points.length <= maxPoints) return points;
-    
+
     // Pegar pontos em intervalos regulares para reduzir quantidade
     const step = Math.ceil(points.length / maxPoints);
     const simplified = [];
-    
+
     for (let i = 0; i < points.length; i += step) {
       simplified.push(points[i]);
     }
-    
+
     // Garantir que o último ponto seja incluído
     if (simplified[simplified.length - 1] !== points[points.length - 1]) {
       simplified.push(points[points.length - 1]);
     }
-    
-    console.log(`Rota simplificada de ${points.length} para ${simplified.length} pontos`);
+
+    console.log(
+      `Rota simplificada de ${points.length} para ${simplified.length} pontos`
+    );
     return simplified;
   };
 
@@ -249,8 +267,10 @@ const RouteModal = ({ show, onHide, onSave, route, collectionPoints = [] }) => {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     const secs = Math.floor(seconds % 60);
-    
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+
+    return `${hours.toString().padStart(2, "0")}:${minutes
+      .toString()
+      .padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
 
   // Buscar rota real usando OSRM (Open Source Routing Machine)
@@ -259,45 +279,50 @@ const RouteModal = ({ show, onHide, onSave, route, collectionPoints = [] }) => {
 
     try {
       // Converter pontos para formato OSRM: lng,lat;lng,lat;...
-      const coordinates = points.map(p => `${p[1]},${p[0]}`).join(';');
-      
+      const coordinates = points.map((p) => `${p[1]},${p[0]}`).join(";");
+
       // API pública do OSRM - usando 'full' para máximo detalhe, depois simplificamos
       const url = `https://router.project-osrm.org/route/v1/driving/${coordinates}?overview=full&geometries=geojson`;
-      
-      console.log('Buscando rota real via OSRM:', url);
-      
+
+      console.log("Buscando rota real via OSRM:", url);
+
       const response = await fetch(url);
       const data = await response.json();
-      
-      if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
+
+      if (data.code === "Ok" && data.routes && data.routes.length > 0) {
         const route = data.routes[0];
-        
+
         // Extrair coordenadas da geometria (vem em GeoJSON)
-        let routeCoordinates = route.geometry.coordinates.map(coord => [coord[1], coord[0]]);
-        
+        let routeCoordinates = route.geometry.coordinates.map((coord) => [
+          coord[1],
+          coord[0],
+        ]);
+
         // Simplificar ainda mais se necessário
         routeCoordinates = simplifyRoute(routeCoordinates);
-        
+
         // Distância em metros, converter para km
         const distance = (route.distance / 1000).toFixed(2);
-        
+
         // Duração em segundos, converter para HH:MM:SS
         const duration = formatDuration(route.duration);
-        
-        console.log(`Rota real calculada: ${distance} km, ${duration}, ${routeCoordinates.length} pontos`);
-        
+
+        console.log(
+          `Rota real calculada: ${distance} km, ${duration}, ${routeCoordinates.length} pontos`
+        );
+
         return {
           points: routeCoordinates,
           distance: parseFloat(distance),
-          duration: duration
+          duration: duration,
         };
       } else {
-        console.warn('OSRM não retornou rota válida, usando linha reta');
+        console.warn("OSRM não retornou rota válida, usando linha reta");
         return fallbackStraightRoute(points);
       }
     } catch (error) {
-      console.error('Erro ao buscar rota real:', error);
-      console.log('Fallback para linha reta entre pontos');
+      console.error("Erro ao buscar rota real:", error);
+      console.log("Fallback para linha reta entre pontos");
       return fallbackStraightRoute(points);
     }
   };
@@ -323,16 +348,18 @@ const RouteModal = ({ show, onHide, onSave, route, collectionPoints = [] }) => {
   const calculateDistance = (point1, point2) => {
     const [lat1, lon1] = point1;
     const [lat2, lon2] = point2;
-    
+
     const R = 6371; // Raio da Terra em km
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    
-    const a = 
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLon = ((lon2 - lon1) * Math.PI) / 180;
+
+    const a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-      Math.sin(dLon / 2) * Math.sin(dLon / 2);
-    
+      Math.cos((lat1 * Math.PI) / 180) *
+        Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   };
@@ -341,23 +368,25 @@ const RouteModal = ({ show, onHide, onSave, route, collectionPoints = [] }) => {
     const newErrors = {};
 
     if (!formData.name.trim()) {
-      newErrors.name = 'Nome da rota é obrigatório';
+      newErrors.name = "Nome da rota é obrigatório";
     }
 
     if (!formData.frequency) {
-      newErrors.frequency = 'Frequência é obrigatória';
+      newErrors.frequency = "Frequência é obrigatória";
     }
 
     if (formData.estimated_distance && formData.estimated_distance <= 0) {
-      newErrors.estimated_distance = 'Distância deve ser maior que zero';
+      newErrors.estimated_distance = "Distância deve ser maior que zero";
     }
 
     if (selectedPoints.length < 2) {
-      newErrors.collection_points = 'Selecione pelo menos 2 pontos de coleta para criar uma rota';
+      newErrors.collection_points =
+        "Selecione pelo menos 2 pontos de coleta para criar uma rota";
     }
 
     if (routePoints.length < 2) {
-      newErrors.geometry = 'A rota precisa ter pelo menos 2 pontos. Selecione mais pontos de coleta.';
+      newErrors.geometry =
+        "A rota precisa ter pelo menos 2 pontos. Selecione mais pontos de coleta.";
     }
 
     setErrors(newErrors);
@@ -375,19 +404,19 @@ const RouteModal = ({ show, onHide, onSave, route, collectionPoints = [] }) => {
 
     try {
       // Converter pontos da rota para GeoJSON LineString
-      const coordinates = routePoints.map(point => [point[1], point[0]]); // [lng, lat]
-      
+      const coordinates = routePoints.map((point) => [point[1], point[0]]); // [lng, lat]
+
       // GeoJSON puro (DRF com GIS suporta automaticamente)
       const geometry = {
-        type: 'LineString',
-        coordinates: coordinates
+        type: "LineString",
+        coordinates: coordinates,
       };
 
       // Preparar pontos de coleta com ordem de sequência
       const collection_points = selectedPoints.map((pointId, index) => ({
         point_id: pointId,
         sequence_order: index + 1,
-        estimated_collection_time: '00:15:00' // 15 minutos padrão
+        estimated_collection_time: "00:15:00", // 15 minutos padrão
       }));
 
       const routeData = {
@@ -401,22 +430,23 @@ const RouteModal = ({ show, onHide, onSave, route, collectionPoints = [] }) => {
         collection_points: collection_points,
       };
 
-      console.log('Enviando dados da rota:', routeData);
-      console.log('Geometria:', JSON.stringify(geometry, null, 2));
+      console.log("Enviando dados da rota:", routeData);
+      console.log("Geometria:", JSON.stringify(geometry, null, 2));
 
       await onSave(routeData);
       onHide();
     } catch (error) {
-      console.error('Erro ao salvar rota:', error);
-      console.error('Resposta do servidor:', error.response?.data);
-      
-      const errorMessage = error.response?.data?.message 
-        || error.response?.data?.error
-        || error.response?.data?.detail
-        || JSON.stringify(error.response?.data)
-        || error.message
-        || 'Erro ao salvar rota';
-      
+      console.error("Erro ao salvar rota:", error);
+      console.error("Resposta do servidor:", error.response?.data);
+
+      const errorMessage =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.response?.data?.detail ||
+        JSON.stringify(error.response?.data) ||
+        error.message ||
+        "Erro ao salvar rota";
+
       setErrors({ submit: errorMessage });
     } finally {
       setLoading(false);
@@ -429,7 +459,7 @@ const RouteModal = ({ show, onHide, onSave, route, collectionPoints = [] }) => {
       click: (e) => {
         if (manualEditMode) {
           const { lat, lng } = e.latlng;
-          setRoutePoints(prev => [...prev, [lat, lng]]);
+          setRoutePoints((prev) => [...prev, [lat, lng]]);
         }
       },
     });
@@ -445,12 +475,12 @@ const RouteModal = ({ show, onHide, onSave, route, collectionPoints = [] }) => {
   const clearRoute = () => {
     setRoutePoints([]);
     setSelectedPoints([]);
-    setFormData(prev => ({ ...prev, estimated_distance: 0 }));
+    setFormData((prev) => ({ ...prev, estimated_distance: 0 }));
   };
 
   const undoLastPoint = () => {
     if (manualEditMode) {
-      setRoutePoints(prev => prev.slice(0, -1));
+      setRoutePoints((prev) => prev.slice(0, -1));
     } else {
       // Remove último ponto selecionado
       const newPoints = selectedPoints.slice(0, -1);
@@ -459,59 +489,23 @@ const RouteModal = ({ show, onHide, onSave, route, collectionPoints = [] }) => {
     }
   };
 
-  const optimizeRoute = () => {
-    // Otimizar ordem dos pontos (algoritmo nearest neighbor básico)
-    if (selectedPoints.length < 2) return;
-
-    const points = selectedPoints.map(id => {
-      const point = collectionPoints.find(p => p.id === id);
-      return {
-        id,
-        coords: point?.location?.coordinates ? [point.location.coordinates[1], point.location.coordinates[0]] : null
-      };
-    }).filter(p => p.coords);
-
-    if (points.length < 2) return;
-
-    // Algoritmo nearest neighbor simples
-    const optimized = [points[0]];
-    let remaining = points.slice(1);
-
-    while (remaining.length > 0) {
-      const current = optimized[optimized.length - 1];
-      let nearest = remaining[0];
-      let minDist = calculateDistance(current.coords, nearest.coords);
-
-      for (let i = 1; i < remaining.length; i++) {
-        const dist = calculateDistance(current.coords, remaining[i].coords);
-        if (dist < minDist) {
-          minDist = dist;
-          nearest = remaining[i];
-        }
-      }
-
-      optimized.push(nearest);
-      remaining = remaining.filter(p => p.id !== nearest.id);
-    }
-
-    const optimizedIds = optimized.map(p => p.id);
-    setSelectedPoints(optimizedIds);
-    updateRouteFromPoints(optimizedIds);
-  };
-
   return (
     <Modal show={show} onHide={onHide} size="xl" centered>
       <Modal.Header closeButton>
         <Modal.Title>
           <i className="fas fa-route me-2"></i>
-          {route ? 'Editar Rota' : 'Nova Rota'}
+          {route ? "Editar Rota" : "Nova Rota"}
         </Modal.Title>
       </Modal.Header>
 
       <Form onSubmit={handleSubmit}>
         <Modal.Body>
           {errors.submit && (
-            <Alert variant="danger" dismissible onClose={() => setErrors({ ...errors, submit: null })}>
+            <Alert
+              variant="danger"
+              dismissible
+              onClose={() => setErrors({ ...errors, submit: null })}
+            >
               {errors.submit}
             </Alert>
           )}
@@ -620,11 +614,21 @@ const RouteModal = ({ show, onHide, onSave, route, collectionPoints = [] }) => {
               <Form.Group className="mb-3">
                 <Form.Label>Pontos de Coleta *</Form.Label>
                 {errors.collection_points && (
-                  <div className="text-danger small mb-2">{errors.collection_points}</div>
+                  <div className="text-danger small mb-2">
+                    {errors.collection_points}
+                  </div>
                 )}
-                <div style={{ maxHeight: '200px', overflowY: 'auto', border: '1px solid #dee2e6', borderRadius: '4px', padding: '8px' }}>
+                <div
+                  style={{
+                    maxHeight: "200px",
+                    overflowY: "auto",
+                    border: "1px solid #dee2e6",
+                    borderRadius: "4px",
+                    padding: "8px",
+                  }}
+                >
                   {collectionPoints.length > 0 ? (
-                    collectionPoints.map(point => (
+                    collectionPoints.map((point) => (
                       <Form.Check
                         key={point.id}
                         type="checkbox"
@@ -636,7 +640,9 @@ const RouteModal = ({ show, onHide, onSave, route, collectionPoints = [] }) => {
                       />
                     ))
                   ) : (
-                    <p className="text-muted mb-0">Nenhum ponto de coleta disponível</p>
+                    <p className="text-muted mb-0">
+                      Nenhum ponto de coleta disponível
+                    </p>
                   )}
                 </div>
               </Form.Group>
@@ -657,10 +663,18 @@ const RouteModal = ({ show, onHide, onSave, route, collectionPoints = [] }) => {
                       }
                     }}
                     className="me-2"
-                    title={useRealRouting ? "Rota segue as ruas" : "Linha reta entre pontos"}
+                    title={
+                      useRealRouting
+                        ? "Rota segue as ruas"
+                        : "Linha reta entre pontos"
+                    }
                   >
-                    <i className={useRealRouting ? "fas fa-route" : "fas fa-draw-polygon"}></i> 
-                    {useRealRouting ? 'GPS' : 'Linha'}
+                    <i
+                      className={
+                        useRealRouting ? "fas fa-route" : "fas fa-draw-polygon"
+                      }
+                    ></i>
+                    {useRealRouting ? "GPS" : "Linha"}
                   </Button>
                   <Button
                     variant={manualEditMode ? "primary" : "outline-secondary"}
@@ -669,17 +683,8 @@ const RouteModal = ({ show, onHide, onSave, route, collectionPoints = [] }) => {
                     className="me-2"
                     title="Ativar modo de edição manual"
                   >
-                    <i className="fas fa-edit"></i> {manualEditMode ? 'Manual' : 'Auto'}
-                  </Button>
-                  <Button
-                    variant="outline-success"
-                    size="sm"
-                    onClick={optimizeRoute}
-                    disabled={selectedPoints.length < 2}
-                    className="me-2"
-                    title="Otimizar ordem dos pontos"
-                  >
-                    <i className="fas fa-magic"></i> Otimizar
+                    <i className="fas fa-edit"></i>{" "}
+                    {manualEditMode ? "Manual" : "Auto"}
                   </Button>
                   <Button
                     variant="outline-secondary"
@@ -709,97 +714,114 @@ const RouteModal = ({ show, onHide, onSave, route, collectionPoints = [] }) => {
                 <div className="text-center mb-2">
                   <Spinner animation="border" size="sm" className="me-2" />
                   <small className="text-muted">
-                    {useRealRouting ? 'Calculando rota seguindo as ruas...' : 'Calculando rota...'}
+                    {useRealRouting
+                      ? "Calculando rota seguindo as ruas..."
+                      : "Calculando rota..."}
                   </small>
                 </div>
               )}
 
-              <div style={{ height: '450px', border: '1px solid #dee2e6', borderRadius: '4px', overflow: 'hidden', position: 'relative' }}>
+              <div
+                style={{
+                  height: "450px",
+                  border: "1px solid #dee2e6",
+                  borderRadius: "4px",
+                  overflow: "hidden",
+                  position: "relative",
+                }}
+              >
                 {loading && (
-                  <div style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    backgroundColor: 'rgba(255, 255, 255, 0.7)',
-                    zIndex: 1000,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexDirection: 'column'
-                  }}>
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      backgroundColor: "rgba(255, 255, 255, 0.7)",
+                      zIndex: 1000,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexDirection: "column",
+                    }}
+                  >
                     <Spinner animation="border" variant="primary" />
                     <small className="text-muted mt-2">Buscando rota...</small>
                   </div>
                 )}
                 {show && (
                   <MapContainer
-                    key={`map-${show ? 'open' : 'closed'}`}
+                    key={`map-${show ? "open" : "closed"}`}
                     center={mapCenter}
                     zoom={13}
-                    style={{ height: '100%', width: '100%' }}
+                    style={{ height: "100%", width: "100%" }}
                     scrollWheelZoom={true}
                   >
-                  <TileLayer
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  />
-                  <MapClickHandler />
+                    <TileLayer
+                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    />
+                    <MapClickHandler />
 
-                  {/* Pontos de coleta no mapa - Não renderizar para evitar erro */}
-                  {false && Array.isArray(collectionPoints) && collectionPoints.map(point => {
-                    let lat, lng;
-                    
-                    // Suportar diferentes formatos de coordenadas
-                    if (point.location && point.location.coordinates) {
-                      [lng, lat] = point.location.coordinates;
-                    } else if (point.latitude && point.longitude) {
-                      lat = point.latitude;
-                      lng = point.longitude;
-                    } else {
-                      return null;
-                    }
-                    
-                    const isSelected = selectedPoints.includes(point.id);
-                    
-                    return (
-                      <Marker
-                        key={`collection-point-${point.id}`}
-                        position={[lat, lng]}
-                        opacity={isSelected ? 1.0 : 0.5}
+                    {/* Pontos de coleta no mapa - Não renderizar para evitar erro */}
+                    {false &&
+                      Array.isArray(collectionPoints) &&
+                      collectionPoints.map((point) => {
+                        let lat, lng;
+
+                        // Suportar diferentes formatos de coordenadas
+                        if (point.location && point.location.coordinates) {
+                          [lng, lat] = point.location.coordinates;
+                        } else if (point.latitude && point.longitude) {
+                          lat = point.latitude;
+                          lng = point.longitude;
+                        } else {
+                          return null;
+                        }
+
+                        const isSelected = selectedPoints.includes(point.id);
+
+                        return (
+                          <Marker
+                            key={`collection-point-${point.id}`}
+                            position={[lat, lng]}
+                            opacity={isSelected ? 1.0 : 0.5}
+                          />
+                        );
+                      })}
+
+                    {/* Linha da rota */}
+                    {routePoints.length > 1 && (
+                      <Polyline
+                        positions={routePoints}
+                        color="blue"
+                        weight={4}
+                        opacity={0.7}
                       />
-                    );
-                  })}
+                    )}
 
-                  {/* Linha da rota */}
-                  {routePoints.length > 1 && (
-                    <Polyline
-                      positions={routePoints}
-                      color="blue"
-                      weight={4}
-                      opacity={0.7}
-                    />
-                  )}
-
-                  {/* Marcadores dos pontos da rota */}
-                  {routePoints.map((point, idx) => (
-                    <Marker
-                      key={`route-point-${idx}`}
-                      position={point}
-                    />
-                  ))}
-                </MapContainer>
+                    {/* Marcadores dos pontos da rota */}
+                    {routePoints.map((point, idx) => (
+                      <Marker key={`route-point-${idx}`} position={point} />
+                    ))}
+                  </MapContainer>
                 )}
               </div>
 
               <small className="text-muted d-block mt-2">
                 <i className="fas fa-info-circle me-1"></i>
                 {manualEditMode ? (
-                  <>Modo Manual: Clique no mapa para adicionar pontos customizados à rota.</>
+                  <>
+                    Modo Manual: Clique no mapa para adicionar pontos
+                    customizados à rota.
+                  </>
                 ) : (
-                  <>Modo Automático: A rota é criada automaticamente conectando os pontos de coleta selecionados. 
-                  Use "Otimizar" para melhor ordem ou "Manual" para ajustes finos.</>
+                  <>
+                    Modo Automático: A rota é criada automaticamente conectando
+                    os pontos de coleta selecionados. Use "Manual" para fazer
+                    ajustes finos.
+                  </>
                 )}
               </small>
             </Col>
@@ -819,7 +841,7 @@ const RouteModal = ({ show, onHide, onSave, route, collectionPoints = [] }) => {
             ) : (
               <>
                 <i className="fas fa-save me-2"></i>
-                {route ? 'Atualizar' : 'Criar'} Rota
+                {route ? "Atualizar" : "Criar"} Rota
               </>
             )}
           </Button>

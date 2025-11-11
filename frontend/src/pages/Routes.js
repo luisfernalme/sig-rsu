@@ -28,9 +28,6 @@ const Routes = () => {
   const [showMapModal, setShowMapModal] = useState(false);
   const [selectedRoute, setSelectedRoute] = useState(null);
 
-  // Estado de otimização
-  const [optimizing, setOptimizing] = useState(null);
-
   // Filtros de busca
   const [filters, setFilters] = useState({
     search: "",
@@ -80,26 +77,6 @@ const Routes = () => {
   const handleViewMap = (route) => {
     setSelectedRoute(route);
     setShowMapModal(true);
-  };
-
-  const handleOptimizeRoute = async (routeId) => {
-    try {
-      setOptimizing(routeId);
-      const result = await routesAPI.optimizeRoute(routeId);
-
-      toast.success(
-        `Rota otimizada! Economia de ${result.savings_km} km (${result.savings_percent}%)`,
-        { duration: 5000 }
-      );
-
-      // Atualizar lista de rotas
-      await fetchRoutes();
-    } catch (err) {
-      console.error("Erro ao otimizar rota:", err);
-      toast.error("Erro ao otimizar rota");
-    } finally {
-      setOptimizing(null);
-    }
   };
 
   const handleSaveRoute = async (routeData) => {
@@ -371,29 +348,6 @@ const Routes = () => {
                   >
                     <i className="fas fa-map me-1"></i>
                     Ver Mapa
-                  </Button>
-                  <Button
-                    variant="outline-success"
-                    size="sm"
-                    className="flex-fill"
-                    onClick={() => handleOptimizeRoute(route.id)}
-                    disabled={optimizing === route.id}
-                  >
-                    {optimizing === route.id ? (
-                      <>
-                        <Spinner
-                          animation="border"
-                          size="sm"
-                          className="me-1"
-                        />
-                        Otimizando...
-                      </>
-                    ) : (
-                      <>
-                        <i className="fas fa-cog me-1"></i>
-                        Otimizar
-                      </>
-                    )}
                   </Button>
                   <Button
                     variant="outline-danger"
