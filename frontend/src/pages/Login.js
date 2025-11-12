@@ -45,60 +45,72 @@ const Login = () => {
   return (
     <Container
       fluid
-      className="vh-100 d-flex align-items-center justify-content-center bg-light"
+      className="vh-100 d-flex align-items-center justify-content-center bg-white"
     >
       <Row className="w-100">
-        <Col xs={12} sm={8} md={6} lg={4} className="mx-auto">
-          <Card className="shadow">
-            <Card.Body className="p-4">
+        <Col xs={12} sm={10} md={8} lg={5} xl={4} className="mx-auto">
+          <Card className="shadow-lg border-0">
+            <Card.Body className="p-5">
               <div className="text-center mb-4">
-                <i className="fas fa-recycle fa-3x text-primary mb-3"></i>
-                <h3 className="card-title">Sistema de Coleta de Resíduos</h3>
-                <p className="text-muted">Faça login para acessar o sistema</p>
+                <div
+                  className="bg-primary bg-opacity-10 d-inline-flex align-items-center justify-content-center rounded-circle mb-3"
+                  style={{ width: "80px", height: "80px" }}
+                >
+                  <i className="fas fa-recycle fa-3x text-primary"></i>
+                </div>
+                <h3 className="fw-bold mb-2">Sistema de Coleta de Resíduos</h3>
+                <p className="text-muted mb-0">
+                  Faça login para acessar o sistema
+                </p>
               </div>
 
               {error && (
-                <Alert variant="danger" className="mb-3">
+                <Alert
+                  variant="danger"
+                  className="mb-3"
+                  dismissible
+                  onClose={() => setError("")}
+                >
+                  <i className="fas fa-exclamation-circle me-2"></i>
                   {error}
                 </Alert>
               )}
 
               <Form onSubmit={handleSubmit}>
                 <Form.Group className="mb-3">
-                  <Form.Label>
-                    <i className="fas fa-envelope me-2"></i>
-                    E-mail
-                  </Form.Label>
+                  <Form.Label className="fw-semibold">E-mail</Form.Label>
                   <Form.Control
                     type="email"
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
-                    placeholder="Digite seu e-mail"
+                    placeholder="seu@email.com"
                     required
+                    size="lg"
+                    className="border-2"
                   />
                 </Form.Group>
 
-                <Form.Group className="mb-3">
-                  <Form.Label>
-                    <i className="fas fa-lock me-2"></i>
-                    Senha
-                  </Form.Label>
+                <Form.Group className="mb-4">
+                  <Form.Label className="fw-semibold">Senha</Form.Label>
                   <Form.Control
                     type="password"
                     name="password"
                     value={formData.password}
                     onChange={handleChange}
-                    placeholder="Digite sua senha"
+                    placeholder="••••••••"
                     required
+                    size="lg"
+                    className="border-2"
                   />
                 </Form.Group>
 
                 <Button
                   variant="primary"
                   type="submit"
-                  className="w-100"
+                  className="w-100 py-3 fw-semibold"
                   disabled={isLoading}
+                  size="lg"
                 >
                   {isLoading ? (
                     <>
@@ -110,29 +122,21 @@ const Login = () => {
                       Entrando...
                     </>
                   ) : (
-                    <>
-                      <i className="fas fa-sign-in-alt me-2"></i>
-                      Entrar
-                    </>
+                    "Entrar"
                   )}
                 </Button>
               </Form>
 
-              <hr className="my-4" />
-
-              <div className="text-center mb-3">
-                <small className="text-muted">
+              <div className="text-center mt-4 pt-3 border-top">
+                <p className="text-muted mb-0">
                   Não tem uma conta?{" "}
-                  <Link to="/register" className="text-decoration-none">
-                    <strong>Cadastre-se aqui</strong>
+                  <Link
+                    to="/register"
+                    className="text-primary text-decoration-none fw-semibold"
+                  >
+                    Cadastre-se aqui
                   </Link>
-                </small>
-              </div>
-
-              <div className="text-center">
-                <small className="text-muted">
-                  Esqueceu sua senha? <a href="#reset">Clique aqui</a>
-                </small>
+                </p>
               </div>
             </Card.Body>
           </Card>

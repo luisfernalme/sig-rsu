@@ -18,19 +18,11 @@ Sistema web para gerenciamento da coleta de resíduos sólidos urbanos, com back
     cd sistema-coleta-rsu
     ```
 
-2.  **Execute o script de inicialização:**
+2.  **Suba os serviços com o Docker Compose:**
 
-    - **Windows:**
-
-      ```cmd
-      start.bat
-      ```
-
-    - **Linux/Mac:**
-      ```bash
-      chmod +x start.sh
-      ./start.sh
-      ```
+        ```bash
+        docker-compose up -d
+        ```
 
 3.  **Acesse os serviços:**
 
@@ -76,7 +68,7 @@ docker-compose down -v
 ├── docker-compose.yml  # Orquestração dos containers
 ├── Dockerfile.backend  # Definição do container do Django
 ├── Dockerfile.frontend # Definição do container do React
-└── start.sh / start.bat # Scripts para automação da inicialização
+└── README.md           # Documentação com instruções de uso
 ```
 
 ## Arquitetura

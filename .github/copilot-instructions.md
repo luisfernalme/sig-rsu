@@ -1,29 +1,28 @@
-
 - [x] Verify that the copilot-instructions.md file in the .github directory is created.
 
 - [x] Clarify Project Requirements
-	Sistema Web para Controle da Coleta de Resíduos Sólidos Urbanos - Django backend, React frontend, PostgreSQL with PostGIS
+      Sistema Web para Controle da Coleta de Resíduos Sólidos Urbanos - Django backend, React frontend, PostgreSQL with PostGIS
 
 - [x] Scaffold the Project
-	Estrutura completa criada: Django backend com PostGIS, apps de autenticação e rotas, configurações iniciais
+      Estrutura completa criada: Django backend com PostGIS, apps de autenticação e rotas, configurações iniciais
 
 - [x] Customize the Project
-	Frontend React completo criado: páginas de Dashboard, Rotas, Veículos, Pontos de Coleta e Relatórios com interfaces funcionais e design responsivo usando Bootstrap
+      Frontend React completo criado: páginas de Dashboard, Rotas, Veículos, Pontos de Coleta e Relatórios com interfaces funcionais e design responsivo usando Bootstrap
 
 - [x] Install Required Extensions
-	Nenhuma extensão específica necessária
+      Nenhuma extensão específica necessária
 
 - [x] Compile the Project
-	Projeto dockerizado completamente - não requer instalação local de dependências
+      Projeto dockerizado completamente - não requer instalação local de dependências
 
 - [x] Create and Run Task
-	Scripts de inicialização Docker criados (start.bat e start.sh)
+      Tarefas Docker configuradas para orquestração via docker-compose
 
 - [x] Launch the Project
-	Projeto pronto para execução via Docker - execute start.bat (Windows) ou start.sh (Linux/Mac)
+      Projeto pronto para execução via Docker - utilize `docker-compose up`
 
 - [x] Ensure Documentation is Complete
-	README.md completo criado com instruções Docker e documentação técnica detalhada
+      README.md completo criado com instruções Docker e documentação técnica detalhada
 
 <!--
 ## Execution Guidelines
@@ -73,6 +72,7 @@ TASK COMPLETION RULES:
 
 Before starting a new task in the above plan, update progress in the plan.
 -->
+
 - Work through each checklist item systematically.
 - Keep communication concise and focused.
 - Follow development best practices.
