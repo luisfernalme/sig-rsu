@@ -239,27 +239,13 @@ const RouteModal = ({ show, onHide, onSave, route, collectionPoints = [] }) => {
     }
   };
 
-  // Simplificar pontos da rota (Douglas-Peucker simplificado)
-  const simplifyRoute = (points, maxPoints = 200) => {
-    if (points.length <= maxPoints) return points;
-
-    // Pegar pontos em intervalos regulares para reduzir quantidade
-    const step = Math.ceil(points.length / maxPoints);
-    const simplified = [];
-
-    for (let i = 0; i < points.length; i += step) {
-      simplified.push(points[i]);
-    }
-
-    // Garantir que o último ponto seja incluído
-    if (simplified[simplified.length - 1] !== points[points.length - 1]) {
-      simplified.push(points[points.length - 1]);
-    }
-
+  // Não simplificar pontos da rota - manter todos os pontos para máxima precisão
+  const simplifyRoute = (points, maxPoints = null) => {
+    // Retornar todos os pontos sem simplificação
     console.log(
-      `Rota simplificada de ${points.length} para ${simplified.length} pontos`
+      `Mantendo todos os ${points.length} pontos da rota (sem simplificação)`
     );
-    return simplified;
+    return points;
   };
 
   // Converter segundos para formato HH:MM:SS

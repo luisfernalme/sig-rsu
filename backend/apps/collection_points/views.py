@@ -26,7 +26,7 @@ class CollectionPointViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['status', 'point_type', 'collection_frequency', 'neighborhood']
     search_fields = ['name', 'code', 'address', 'neighborhood']
-    ordering_fields = ['name', 'code', 'current_fill_level', 'last_collection', 'created_at']
+    ordering_fields = ['name', 'code', 'last_collection', 'created_at']
     ordering = ['code']
     
     def get_serializer_class(self):
@@ -74,9 +74,6 @@ class CollectionPointViewSet(viewsets.ModelViewSet):
             'total_waste_collected': collections.aggregate(
                 total=Sum('weight_collected')
             )['total'] or 0,
-            'avg_fill_level': points.aggregate(
-                avg=Avg('current_fill_level')
-            )['avg'] or 0,
             'by_type': dict(points.values_list('point_type').annotate(
                 count=Count('id')
             )),
@@ -94,9 +91,9 @@ class CollectionPointViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def full_points(self, request):
         """
-        Pontos com alta capacidade (>80%)
+        Pontos marcados como cheios
         """
-        points = CollectionPoint.objects.filter(current_fill_level__gte=80)
+        points = CollectionPoint.objects.filter(status='full')
         serializer = self.get_serializer(points, many=True)
         return Response(serializer.data)
     
@@ -109,10 +106,10 @@ class CollectionPointViewSet(viewsets.ModelViewSet):
         threshold_date = date.today() - timedelta(days=days_threshold)
         
         points = CollectionPoint.objects.filter(
-            Q(current_fill_level__gte=70) |
             Q(last_collection__lt=threshold_date) |
-            Q(last_collection__isnull=True)
-        ).filter(status='active')
+            Q(last_collection__isnull=True) |
+            Q(status='full')
+        ).filter(status__in=['active', 'full'])
         
         serializer = self.get_serializer(points, many=True)
         return Response(serializer.data)
@@ -158,9 +155,6 @@ class CollectionPointViewSet(viewsets.ModelViewSet):
             
             # Atualizar ponto de coleta
             collection_point.last_collection = collection.collection_date
-            collection_point.current_fill_level = collection_data.get(
-                'fill_level_after', 0
-            )
             
             # Calcular próxima coleta baseada na frequência
             if collection_point.collection_frequency == 'daily':
@@ -181,39 +175,6 @@ class CollectionPointViewSet(viewsets.ModelViewSet):
             })
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-    @action(detail=True, methods=['post'])
-    def update_fill_level(self, request, pk=None):
-        """
-        Atualizar nível de preenchimento
-        """
-        collection_point = self.get_object()
-        fill_level = request.data.get('fill_level')
-        
-        if fill_level is None:
-            return Response({
-                'error': 'Nível de preenchimento é obrigatório.'
-            }, status=status.HTTP_400_BAD_REQUEST)
-        
-        if not (0 <= fill_level <= 100):
-            return Response({
-                'error': 'Nível deve estar entre 0 e 100%.'
-            }, status=status.HTTP_400_BAD_REQUEST)
-        
-        collection_point.current_fill_level = fill_level
-        
-        # Atualizar status baseado no nível
-        if fill_level >= 90:
-            collection_point.status = 'full'
-        elif collection_point.status == 'full' and fill_level < 90:
-            collection_point.status = 'active'
-        
-        collection_point.save()
-        
-        return Response({
-            'message': 'Nível de preenchimento atualizado!',
-            'collection_point': CollectionPointSerializer(collection_point).data
-        })
     
     @action(detail=True, methods=['get'])
     def collection_history(self, request, pk=None):

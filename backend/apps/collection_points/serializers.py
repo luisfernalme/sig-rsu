@@ -26,7 +26,6 @@ class CollectionPointSerializer(serializers.ModelSerializer):
     type_display = serializers.CharField(source='get_point_type_display', read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     frequency_display = serializers.CharField(source='get_collection_frequency_display', read_only=True)
-    fill_level_percentage = serializers.SerializerMethodField()
     days_since_collection = serializers.SerializerMethodField()
     latitude = serializers.FloatField(write_only=True, required=False)
     longitude = serializers.FloatField(write_only=True, required=False)
@@ -43,8 +42,8 @@ class CollectionPointSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'name', 'code', 'point_type', 'type_display', 'location',
             'latitude', 'longitude', 'latitude_read', 'longitude_read', 'latitude_out', 'longitude_out', 'address', 'neighborhood', 'capacity_volume', 
-            'capacity_weight', 'status', 'status_display', 'current_fill_level', 
-            'fill_level_percentage', 'collection_frequency', 'frequency_display', 
+            'capacity_weight', 'status', 'status_display',
+            'collection_frequency', 'frequency_display', 
             'last_collection', 'next_collection', 'days_since_collection', 
             'created_by', 'created_by_name', 'created_at', 'updated_at'
         ]
@@ -57,12 +56,6 @@ class CollectionPointSerializer(serializers.ModelSerializer):
             'collection_frequency': {'required': False},
             'location': {'required': False}
         }
-    
-    def get_fill_level_percentage(self, obj):
-        """
-        Nível de preenchimento em porcentagem
-        """
-        return f"{obj.current_fill_level}%"
     
     def get_days_since_collection(self, obj):
         """
@@ -106,14 +99,6 @@ class CollectionPointSerializer(serializers.ModelSerializer):
         ).exists():
             raise serializers.ValidationError("Já existe um ponto com este código.")
         return value.upper()
-    
-    def validate_current_fill_level(self, value):
-        """
-        Validar nível de preenchimento
-        """
-        if value < 0 or value > 100:
-            raise serializers.ValidationError("Nível deve estar entre 0 e 100%.")
-        return value
     
     def create(self, validated_data):
         """
@@ -434,10 +419,10 @@ class CollectionPointStatsSerializer(serializers.Serializer):
     maintenance_points = serializers.IntegerField()
     total_collections = serializers.IntegerField()
     total_waste_collected = serializers.FloatField()
-    avg_fill_level = serializers.FloatField()
     by_type = serializers.DictField()
     by_status = serializers.DictField()
     by_neighborhood = serializers.DictField()
+
 
 
 class BulkCollectionSerializer(serializers.Serializer):

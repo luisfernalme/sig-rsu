@@ -74,9 +74,19 @@ const Routes = () => {
     setShowRouteModal(true);
   };
 
-  const handleViewMap = (route) => {
-    setSelectedRoute(route);
-    setShowMapModal(true);
+  const handleViewMap = async (route) => {
+    try {
+      // Buscar dados detalhados da rota incluindo pontos de coleta
+      const detailedRoute = await routesAPI.getRoute(route.id);
+      setSelectedRoute(detailedRoute);
+      setShowMapModal(true);
+    } catch (err) {
+      console.error("Erro ao buscar detalhes da rota:", err);
+      toast.error("Erro ao carregar detalhes da rota");
+      // Se falhar, mostrar com dados básicos
+      setSelectedRoute(route);
+      setShowMapModal(true);
+    }
   };
 
   const handleSaveRoute = async (routeData) => {

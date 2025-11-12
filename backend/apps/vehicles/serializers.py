@@ -70,6 +70,11 @@ class VehicleSerializer(serializers.ModelSerializer):
             'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
+        extra_kwargs = {
+            'capacity_weight': {'required': False, 'allow_null': True},
+            'capacity_volume': {'required': False, 'allow_null': True},
+            'fuel_capacity': {'required': False, 'allow_null': True},
+        }
     
     def get_maintenance_due(self, obj):
         """

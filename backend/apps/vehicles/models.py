@@ -96,10 +96,10 @@ class Vehicle(models.Model):
     year = models.IntegerField(verbose_name='Ano')
     vehicle_type = models.CharField(max_length=20, choices=TYPE_CHOICES, verbose_name='Tipo')
     
-    # Capacidades
-    capacity_weight = models.FloatField(verbose_name='Capacidade de Peso (kg)')
-    capacity_volume = models.FloatField(verbose_name='Capacidade de Volume (m³)')
-    fuel_capacity = models.FloatField(verbose_name='Capacidade do Tanque (L)')
+    # Capacidades (opcionais)
+    capacity_weight = models.FloatField(null=True, blank=True, verbose_name='Capacidade de Peso (kg)')
+    capacity_volume = models.FloatField(null=True, blank=True, verbose_name='Capacidade de Volume (m³)')
+    fuel_capacity = models.FloatField(null=True, blank=True, verbose_name='Capacidade do Tanque (L)')
     
     # Status e manutenção
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active', verbose_name='Status')

@@ -39,7 +39,6 @@ class CollectionPoint(models.Model):
     
     # Status
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active', verbose_name='Status')
-    current_fill_level = models.FloatField(default=0, verbose_name='Nível de Preenchimento (%)')
     
     # Cronograma de coleta
     collection_frequency = models.CharField(max_length=20, choices=[

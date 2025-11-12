@@ -65,12 +65,7 @@ const VehicleModal = ({
     if (!formData.year || Number(formData.year) < 1900)
       newErrors.year = "Ano inválido";
     if (!formData.vehicle_type) newErrors.vehicle_type = "Tipo é obrigatório";
-    if (!formData.capacity_weight)
-      newErrors.capacity_weight = "Capacidade de peso é obrigatória";
-    if (!formData.capacity_volume)
-      newErrors.capacity_volume = "Capacidade de volume é obrigatória";
-    if (!formData.fuel_capacity)
-      newErrors.fuel_capacity = "Capacidade do tanque é obrigatória";
+    // Capacidades não são mais obrigatórias
     return newErrors;
   };
 
@@ -153,7 +148,7 @@ const VehicleModal = ({
                   name="license_plate"
                   value={formData.license_plate}
                   onChange={handleChange}
-                  placeholder="ABC-1234"
+                  placeholder="ABC1D23"
                   isInvalid={!!errors.license_plate}
                 />
                 <Form.Control.Feedback type="invalid">
@@ -245,7 +240,7 @@ const VehicleModal = ({
               <Row>
                 <Col md={6}>
                   <Form.Group className="mb-3">
-                    <Form.Label>Capacidade Peso (kg) *</Form.Label>
+                    <Form.Label>Capacidade Peso (kg)</Form.Label>
                     <Form.Control
                       type="number"
                       step="0.1"
@@ -261,7 +256,7 @@ const VehicleModal = ({
                 </Col>
                 <Col md={6}>
                   <Form.Group className="mb-3">
-                    <Form.Label>Capacidade Volume (m³) *</Form.Label>
+                    <Form.Label>Capacidade Volume (m³)</Form.Label>
                     <Form.Control
                       type="number"
                       step="0.1"
@@ -282,7 +277,7 @@ const VehicleModal = ({
           <Row>
             <Col md={4}>
               <Form.Group className="mb-3">
-                <Form.Label>Capacidade do Tanque (L) *</Form.Label>
+                <Form.Label>Capacidade do Tanque (L)</Form.Label>
                 <Form.Control
                   type="number"
                   step="0.1"

@@ -163,17 +163,32 @@ class RouteDetailSerializer(RouteSerializer):
     
     def get_collection_points(self, obj):
         """
-        Pontos de coleta da rota ordenados por sequência
+        Pontos de coleta da rota ordenados por sequência com dados completos
         """
-        # Evitar import circular - usar dados básicos
         route_points = obj.collection_points.all().order_by('sequence_order')
-        return [{
-            'id': rp.id,
-            'sequence_order': rp.sequence_order,
-            'collection_point_name': rp.collection_point.name,
-            'collection_point_code': rp.collection_point.code,
-            'estimated_collection_time': str(rp.estimated_collection_time)
-        } for rp in route_points]
+        points_data = []
+        
+        for rp in route_points:
+            point = rp.collection_point
+            point_data = {
+                'id': point.id,
+                'name': point.name,
+                'code': point.code,
+                'address': point.address,
+                'sequence_order': rp.sequence_order,
+                'estimated_collection_time': str(rp.estimated_collection_time),
+                'location': {
+                    'type': 'Point',
+                    'coordinates': [point.location.x, point.location.y] if point.location else None
+                },
+                'latitude': point.location.y if point.location else None,
+                'longitude': point.location.x if point.location else None,
+                'status': point.status,
+                'status_display': point.get_status_display()
+            }
+            points_data.append(point_data)
+        
+        return points_data
 
 
 class RouteStatsSerializer(serializers.Serializer):

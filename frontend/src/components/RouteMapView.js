@@ -231,74 +231,115 @@ const RouteMapView = ({
               opacity={0.7}
             />
 
-            {/* Marcadores de início e fim */}
-            {routePoints.length > 0 && (
-              <>
-                <Marker
-                  position={routePoints[0]}
-                  icon={L.divIcon({
-                    className: "custom-div-icon",
-                    html: '<div style="background-color: green; color: white; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">I</div>',
-                    iconSize: [30, 30],
-                    iconAnchor: [15, 15],
-                  })}
-                >
-                  <Popup>
-                    <strong>Início da Rota</strong>
-                    <br />
-                    {route.name}
-                  </Popup>
-                </Marker>
-
-                <Marker
-                  position={routePoints[routePoints.length - 1]}
-                  icon={L.divIcon({
-                    className: "custom-div-icon",
-                    html: '<div style="background-color: red; color: white; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">F</div>',
-                    iconSize: [30, 30],
-                    iconAnchor: [15, 15],
-                  })}
-                >
-                  <Popup>
-                    <strong>Fim da Rota</strong>
-                    <br />
-                    {route.name}
-                  </Popup>
-                </Marker>
-              </>
-            )}
-
             {/* Pontos de coleta */}
-            {collectionPoints.map((point, idx) => {
+            {collectionPoints.map((point) => {
               if (point.location && point.location.coordinates) {
                 const [lng, lat] = point.location.coordinates;
+                const order = point.sequence_order || 0;
+
+                // Criar ícone numerado personalizado
+                const numberedIcon = L.divIcon({
+                  className: "custom-div-icon",
+                  html: `<div style="background-color: #28a745; color: white; border-radius: 50%; width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.4); z-index: 100;">${order}</div>`,
+                  iconSize: [35, 35],
+                  iconAnchor: [17, 17],
+                  popupAnchor: [0, -17],
+                });
+
                 return (
                   <Marker
                     key={point.id}
                     position={[lat, lng]}
-                    icon={collectionPointIcon}
+                    icon={numberedIcon}
+                    zIndexOffset={100}
                   >
                     <Popup>
-                      <strong>{point.name}</strong>
-                      <br />
-                      <small className="text-muted">Código: {point.code}</small>
-                      <br />
-                      {point.address && (
-                        <>
-                          <small>{point.address}</small>
-                          <br />
-                        </>
-                      )}
-                      <small>Ordem: #{idx + 1}</small>
+                      <div style={{ minWidth: "200px" }}>
+                        <strong style={{ fontSize: "16px" }}>
+                          #{order} - {point.name}
+                        </strong>
+                        <br />
+                        <small className="text-muted">
+                          Código: {point.code}
+                        </small>
+                        <br />
+                        {point.address && (
+                          <>
+                            <small>📍 {point.address}</small>
+                            <br />
+                          </>
+                        )}
+                        {point.status && (
+                          <>
+                            <small>
+                              Status:{" "}
+                              <strong>
+                                {point.status_display || point.status}
+                              </strong>
+                            </small>
+                            <br />
+                          </>
+                        )}
+                      </div>
                     </Popup>
-                    <Tooltip direction="top" offset={[0, -40]} opacity={0.9}>
-                      {point.name}
+                    <Tooltip
+                      direction="top"
+                      offset={[0, -20]}
+                      opacity={0.9}
+                      permanent={false}
+                    >
+                      <strong>#{order}</strong> - {point.name}
                     </Tooltip>
                   </Marker>
                 );
               }
               return null;
             })}
+
+            {/* Marcadores de início e fim - renderizados por último para ficarem por cima */}
+            {routePoints.length > 0 && (
+              <>
+                <Marker
+                  position={routePoints[0]}
+                  icon={L.divIcon({
+                    className: "custom-div-icon",
+                    html: '<div style="background-color: #0066cc; color: white; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; border: 3px solid white; box-shadow: 0 3px 10px rgba(0,0,0,0.5); z-index: 1000;">I</div>',
+                    iconSize: [40, 40],
+                    iconAnchor: [20, 20],
+                  })}
+                  zIndexOffset={1000}
+                >
+                  <Popup>
+                    <strong>🚀 Início da Rota</strong>
+                    <br />
+                    {route.name}
+                  </Popup>
+                  <Tooltip direction="top" offset={[0, -25]} opacity={0.95}>
+                    <strong>Início</strong>
+                  </Tooltip>
+                </Marker>
+
+                <Marker
+                  position={routePoints[routePoints.length - 1]}
+                  icon={L.divIcon({
+                    className: "custom-div-icon",
+                    html: '<div style="background-color: #dc3545; color: white; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; border: 3px solid white; box-shadow: 0 3px 10px rgba(0,0,0,0.5); z-index: 1000;">F</div>',
+                    iconSize: [40, 40],
+                    iconAnchor: [20, 20],
+                  })}
+                  zIndexOffset={1000}
+                >
+                  <Popup>
+                    <strong>🏁 Fim da Rota</strong>
+                    <br />
+                    {route.name}
+                  </Popup>
+                  <Tooltip direction="top" offset={[0, -25]} opacity={0.95}>
+                    <strong>Fim</strong>
+                  </Tooltip>
+                </Marker>
+              </>
+            )}
           </MapContainer>
         ) : (
           <div className="d-flex align-items-center justify-content-center h-100 bg-light">
@@ -311,7 +352,7 @@ const RouteMapView = ({
       </div>
 
       {/* Legenda */}
-      <div className="mt-3 d-flex justify-content-center gap-4">
+      <div className="mt-3 d-flex justify-content-center gap-4 flex-wrap">
         <div className="d-flex align-items-center">
           <div
             style={{
@@ -326,36 +367,125 @@ const RouteMapView = ({
         <div className="d-flex align-items-center">
           <div
             style={{
-              width: "20px",
-              height: "20px",
-              backgroundColor: "green",
+              width: "28px",
+              height: "28px",
+              backgroundColor: "#0066cc",
+              color: "white",
               borderRadius: "50%",
               marginRight: "8px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "12px",
+              fontWeight: "bold",
+              border: "2px solid white",
+              boxShadow: "0 2px 4px rgba(0,0,0,0.3)",
             }}
-          ></div>
+          >
+            I
+          </div>
           <small>Início</small>
         </div>
         <div className="d-flex align-items-center">
           <div
             style={{
-              width: "20px",
-              height: "20px",
-              backgroundColor: "red",
+              width: "28px",
+              height: "28px",
+              backgroundColor: "#dc3545",
+              color: "white",
               borderRadius: "50%",
               marginRight: "8px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "12px",
+              fontWeight: "bold",
+              border: "2px solid white",
+              boxShadow: "0 2px 4px rgba(0,0,0,0.3)",
             }}
-          ></div>
+          >
+            F
+          </div>
           <small>Fim</small>
         </div>
         <div className="d-flex align-items-center">
-          <img
-            src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png"
-            alt="Ponto de Coleta"
-            style={{ width: "16px", height: "26px", marginRight: "8px" }}
-          />
-          <small>Pontos de Coleta</small>
+          <div
+            style={{
+              width: "24px",
+              height: "24px",
+              backgroundColor: "#28a745",
+              color: "white",
+              borderRadius: "50%",
+              marginRight: "8px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "10px",
+              fontWeight: "bold",
+              border: "2px solid white",
+            }}
+          >
+            #
+          </div>
+          <small>Pontos de Coleta (numerados)</small>
         </div>
       </div>
+
+      {/* Lista de pontos ordenados */}
+      {collectionPoints.length > 0 && (
+        <div className="mt-4">
+          <h6 className="mb-3">
+            <i className="fas fa-list-ol me-2"></i>
+            Sequência de Coleta ({collectionPoints.length} pontos)
+          </h6>
+          <div className="row g-2">
+            {collectionPoints.map((point) => (
+              <div key={point.id} className="col-12 col-md-6 col-lg-4">
+                <div
+                  className="p-2 border rounded d-flex align-items-center"
+                  style={{ backgroundColor: "#f8f9fa" }}
+                >
+                  <div
+                    style={{
+                      width: "32px",
+                      height: "32px",
+                      backgroundColor: "#28a745",
+                      color: "white",
+                      borderRadius: "50%",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontWeight: "bold",
+                      fontSize: "14px",
+                      marginRight: "10px",
+                      flexShrink: 0,
+                      border: "2px solid white",
+                      boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                    }}
+                  >
+                    {point.sequence_order || 0}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div
+                      style={{
+                        fontWeight: "600",
+                        fontSize: "14px",
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
+                      title={point.name}
+                    >
+                      {point.name}
+                    </div>
+                    <small className="text-muted d-block">{point.code}</small>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </>
   );
 
