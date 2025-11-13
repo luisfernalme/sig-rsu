@@ -1833,12 +1833,4 @@ Para dúvidas ou suporte:
 - **Discussions**: https://github.com/luissaster/sistema-coleta-rsu/discussions
 - **Email**: luisfernalme@gmail.com
 
-### 12.4 Licença
 
-Este projeto está licenciado sob a [MIT License](LICENSE).
-
----
-
-**Desenvolvido como Trabalho de Conclusão de Curso (TCC)**
-
-*Última atualização: Janeiro 2025*
