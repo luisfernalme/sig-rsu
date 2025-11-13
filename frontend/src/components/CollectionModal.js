@@ -31,7 +31,6 @@ const CollectionModal = ({
 
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
-  const [routePoints, setRoutePoints] = useState([]);
   const [loadingPoints, setLoadingPoints] = useState(false);
 
   useEffect(() => {
@@ -79,7 +78,7 @@ const CollectionModal = ({
     setErrors({});
   }, [collection, show]);
 
-  // Buscar pontos da rota quando ela for selecionada
+  // Buscar pontos da rota quando ela for selecionada E quando o modo for "by_point"
   useEffect(() => {
     if (formData.route && formData.registration_mode === "by_point") {
       setLoadingPoints(true);
@@ -93,7 +92,10 @@ const CollectionModal = ({
           ) {
             const points = fullRoute.collection_points.map((point) => ({
               collection_point: point.id,
-              point_name: point.collection_point_name,
+              point_name:
+                point.name ||
+                point.collection_point_name ||
+                `Ponto ${point.id}`,
               sequence_order: point.sequence_order,
               collected: false,
               waste_collected_weight: "",
