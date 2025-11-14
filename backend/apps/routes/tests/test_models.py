@@ -5,6 +5,7 @@ from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.contrib.gis.geos import LineString, Point
 from datetime import datetime, timedelta, time
+from django.utils import timezone
 from apps.routes.models import Route, RouteSchedule, RouteExecution
 from apps.vehicles.models import Vehicle
 
@@ -182,7 +183,7 @@ class RouteExecutionModelTest(TestCase):
             route=self.route,
             vehicle=self.vehicle,
             driver=self.user,
-            scheduled_date=datetime.now().date(),
+            scheduled_date=timezone.now().date(),
             scheduled_time=time(8, 0),
             status='scheduled'
         )
@@ -203,7 +204,7 @@ class RouteExecutionModelTest(TestCase):
         """Testa progressão de status"""
         # Iniciar execução
         self.execution.status = 'in_progress'
-        self.execution.actual_start_time = datetime.now()
+        self.execution.actual_start_time = timezone.now()
         self.execution.save()
         
         self.assertEqual(self.execution.status, 'in_progress')
@@ -211,7 +212,7 @@ class RouteExecutionModelTest(TestCase):
         
         # Completar execução
         self.execution.status = 'completed'
-        self.execution.actual_end_time = datetime.now()
+        self.execution.actual_end_time = timezone.now()
         self.execution.actual_distance = 10.5
         self.execution.fuel_consumed = 25.0
         self.execution.waste_collected = 2500.0

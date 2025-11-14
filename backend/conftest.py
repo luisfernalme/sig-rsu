@@ -5,6 +5,14 @@ import os
 import sys
 import django
 from pathlib import Path
+import warnings
+
+# Silenciar DeprecationWarning do simplejwt/pkg_resources durante testes
+warnings.filterwarnings(
+	"ignore",
+	message=".*pkg_resources is deprecated as an API.*",
+	category=DeprecationWarning,
+)
 
 # Adicionar o diretório backend ao path
 BASE_DIR = Path(__file__).resolve().parent

@@ -7,6 +7,7 @@ from django.contrib.gis.geos import Point
 from rest_framework.test import APIClient
 from rest_framework import status
 from datetime import datetime, timedelta
+from django.utils import timezone
 from apps.collection_points.models import CollectionPoint, CollectionRecord, WasteType
 
 User = get_user_model()
@@ -173,7 +174,7 @@ class CollectionPointViewSetTest(TestCase):
     def test_needs_collection_endpoint(self):
         """Testa endpoint de pontos que precisam coleta"""
         # Definir última coleta como antiga
-        past_date = datetime.now() - timedelta(days=10)
+        past_date = timezone.now() - timedelta(days=10)
         self.collection_point1.last_collection = past_date
         self.collection_point1.save()
         
@@ -213,7 +214,7 @@ class CollectionPointViewSetTest(TestCase):
         for i in range(3):
             CollectionRecord.objects.create(
                 collection_point=self.collection_point1,
-                collection_date=datetime.now() - timedelta(days=i),
+                collection_date=timezone.now() - timedelta(days=i),
                 status='collected',
                 weight_collected=200.0 + i * 50,
                 collected_by=self.user
@@ -264,7 +265,7 @@ class CollectionRecordViewSetTest(TestCase):
         
         self.collection_record = CollectionRecord.objects.create(
             collection_point=self.collection_point,
-            collection_date=datetime.now(),
+            collection_date=timezone.now(),
             status='collected',
             weight_collected=250.0,
             volume_collected=5.0,
@@ -282,7 +283,7 @@ class CollectionRecordViewSetTest(TestCase):
         """Testa criação de registro de coleta"""
         data = {
             'collection_point': self.collection_point.id,
-            'collection_date': datetime.now().isoformat(),
+            'collection_date': timezone.now().isoformat(),
             'status': 'collected',
             'weight_collected': 300.0,
             'volume_collected': 6.5,

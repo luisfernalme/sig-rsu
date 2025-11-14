@@ -153,6 +153,17 @@ class CollectionPointSerializer(serializers.ModelSerializer):
         # Se latitude e longitude foram fornecidas, atualizar Point
         if latitude is not None and longitude is not None:
             validated_data['location'] = Point(float(longitude), float(latitude))
+
+        # Converter GeoJSON/dict para Point, se necessário
+        loc = validated_data.get('location')
+        if isinstance(loc, dict):
+            try:
+                if loc.get('type') == 'Point' and isinstance(loc.get('coordinates'), (list, tuple)):
+                    lon, lat = loc['coordinates'][0], loc['coordinates'][1]
+                    validated_data['location'] = Point(float(lon), float(lat))
+            except Exception:
+                # Se algo vier inválido, apenas ignore e deixe validação padrão tratar
+                validated_data.pop('location', None)
         
         return super().update(instance, validated_data)
     
@@ -236,6 +247,9 @@ class CollectionRecordSerializer(serializers.ModelSerializer):
             'collected_by', 'collected_by_name', 'created_at'
         ]
         read_only_fields = ['id', 'created_at']
+        extra_kwargs = {
+            'collected_by': {'read_only': True}
+        }
     
     def get_route_execution_info(self, obj):
         """
@@ -293,6 +307,51 @@ class CollectionRecordSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Nível depois deve estar entre 0 e 100%.")
         
         return attrs
+
+    def create(self, validated_data, **kwargs):
+        """
+        Preenche collected_by automaticamente e converte collection_location se vier como GeoJSON.
+        """
+        from django.contrib.gis.geos import Point
+
+        # Definir usuário coletor se não informado
+        request = self.context.get('request')
+        if request and hasattr(request, 'user') and 'collected_by' not in validated_data:
+            validated_data['collected_by'] = request.user
+
+        # Converter localização da coleta caso venha como dict GeoJSON
+        loc = validated_data.get('collection_location')
+        if isinstance(loc, dict):
+            try:
+                if loc.get('type') == 'Point' and isinstance(loc.get('coordinates'), (list, tuple)):
+                    lon, lat = loc['coordinates'][0], loc['coordinates'][1]
+                    validated_data['collection_location'] = Point(float(lon), float(lat))
+            except Exception:
+                validated_data.pop('collection_location', None)
+
+        # Incorporar quaisquer kwargs passados via serializer.save()
+        if kwargs:
+            validated_data.update(kwargs)
+
+        return super().create(validated_data)
+
+    def to_representation(self, instance):
+        """
+        Formata campos numéricos conforme expectativa dos testes.
+        """
+        rep = super().to_representation(instance)
+        # Formatar peso e volume com duas casas decimais como string
+        if rep.get('weight_collected') is not None:
+            try:
+                rep['weight_collected'] = f"{float(rep['weight_collected']):.2f}"
+            except Exception:
+                pass
+        if rep.get('volume_collected') is not None:
+            try:
+                rep['volume_collected'] = f"{float(rep['volume_collected']):.2f}"
+            except Exception:
+                pass
+        return rep
 
 
 class CollectionPointWasteTypeSerializer(serializers.ModelSerializer):

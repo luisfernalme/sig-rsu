@@ -7,6 +7,7 @@ from django.contrib.gis.geos import LineString, Point
 from rest_framework.test import APIClient
 from rest_framework import status
 from datetime import datetime, date, time, timedelta
+from django.utils import timezone
 from decimal import Decimal
 
 from apps.routes.models import Route, RouteExecution
@@ -112,7 +113,7 @@ class CollectionFlowTest(TestCase):
         """Testa o fluxo completo de uma coleta"""
         # 1. Iniciar coleta
         self.collection.status = 'in_progress'
-        self.collection.start_time = datetime.now()
+        self.collection.start_time = timezone.now()
         self.collection.save()
         
         self.assertEqual(self.collection.status, 'in_progress')
@@ -135,12 +136,12 @@ class CollectionFlowTest(TestCase):
         
         # 3. Coletar pontos
         item1.collected = True
-        item1.collected_at = datetime.now()
+        item1.collected_at = timezone.now()
         item1.weight = Decimal('300.0')
         item1.save()
         
         item2.collected = True
-        item2.collected_at = datetime.now()
+        item2.collected_at = timezone.now()
         item2.weight = Decimal('150.0')
         item2.save()
         
@@ -152,7 +153,7 @@ class CollectionFlowTest(TestCase):
         
         # 5. Finalizar coleta
         self.collection.status = 'completed'
-        self.collection.end_time = datetime.now()
+        self.collection.end_time = timezone.now()
         self.collection.distance_traveled = Decimal('15.5')
         self.collection.fuel_consumed = Decimal('25.0')
         self.collection.save()
@@ -178,7 +179,7 @@ class CollectionFlowTest(TestCase):
         
         # Coletar apenas o primeiro ponto
         item1.collected = True
-        item1.collected_at = datetime.now()
+        item1.collected_at = timezone.now()
         item1.weight = Decimal('300.0')
         item1.save()
         
@@ -193,8 +194,8 @@ class CollectionFlowTest(TestCase):
     
     def test_collection_metrics_calculation(self):
         """Testa cálculo de métricas da coleta"""
-        self.collection.start_time = datetime.now() - timedelta(hours=2)
-        self.collection.end_time = datetime.now()
+        self.collection.start_time = timezone.now() - timedelta(hours=2)
+        self.collection.end_time = timezone.now()
         self.collection.distance_traveled = Decimal('15.5')
         self.collection.fuel_consumed = Decimal('25.0')
         self.collection.total_weight = Decimal('1500.0')
@@ -366,7 +367,7 @@ class RouteExecutionTest(TestCase):
         """Testa ciclo de vida da execução de rota"""
         # 1. Iniciar execução
         self.execution.status = 'in_progress'
-        self.execution.actual_start_time = datetime.now()
+    self.execution.actual_start_time = timezone.now()
         self.execution.save()
         
         self.assertEqual(self.execution.status, 'in_progress')
@@ -379,7 +380,7 @@ class RouteExecutionTest(TestCase):
         
         # 3. Completar execução
         self.execution.status = 'completed'
-        self.execution.actual_end_time = datetime.now()
+    self.execution.actual_end_time = timezone.now()
         self.execution.save()
         
         self.assertEqual(self.execution.status, 'completed')
@@ -388,8 +389,8 @@ class RouteExecutionTest(TestCase):
     def test_route_execution_comparison(self):
         """Testa comparação entre estimado e real"""
         self.execution.actual_distance = 22.0  # 2km a mais que estimado
-        self.execution.actual_start_time = datetime.now()
-        self.execution.actual_end_time = datetime.now() + timedelta(hours=3, minutes=30)
+    self.execution.actual_start_time = timezone.now()
+    self.execution.actual_end_time = timezone.now() + timedelta(hours=3, minutes=30)
         self.execution.save()
         
         # Distância real > distância estimada

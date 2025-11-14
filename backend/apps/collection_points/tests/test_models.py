@@ -5,6 +5,7 @@ from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.contrib.gis.geos import Point
 from datetime import datetime, timedelta
+from django.utils import timezone
 from apps.collection_points.models import (
     CollectionPoint, CollectionRecord, WasteType, 
     CollectionPointWasteType, CollectionPointPhoto
@@ -89,7 +90,7 @@ class CollectionPointModelTest(TestCase):
     
     def test_last_collection_update(self):
         """Testa atualização da última coleta"""
-        now = datetime.now()
+        now = timezone.now()
         self.collection_point.last_collection = now
         self.collection_point.save()
         
@@ -97,7 +98,7 @@ class CollectionPointModelTest(TestCase):
     
     def test_next_collection_calculation(self):
         """Testa cálculo da próxima coleta"""
-        now = datetime.now()
+        now = timezone.now()
         self.collection_point.last_collection = now
         self.collection_point.next_collection = now + timedelta(weeks=1)
         self.collection_point.save()
@@ -136,7 +137,7 @@ class CollectionRecordModelTest(TestCase):
         
         self.collection_record = CollectionRecord.objects.create(
             collection_point=self.collection_point,
-            collection_date=datetime.now(),
+            collection_date=timezone.now(),
             status='collected',
             weight_collected=250.0,
             volume_collected=5.0,

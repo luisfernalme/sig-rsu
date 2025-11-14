@@ -1831,6 +1831,4 @@ Para contribuir com o projeto:
 Para dúvidas ou suporte:
 - **Issues**: https://github.com/luissaster/sistema-coleta-rsu/issues
 - **Discussions**: https://github.com/luissaster/sistema-coleta-rsu/discussions
-- **Email**: luisfernalme@gmail.com
-
 

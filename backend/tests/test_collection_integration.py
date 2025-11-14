@@ -9,6 +9,7 @@ from django.contrib.gis.geos import LineString, Point
 from rest_framework.test import APIClient
 from rest_framework import status
 from datetime import datetime, date, time, timedelta
+from django.utils import timezone
 from decimal import Decimal
 
 from apps.routes.models import Route, RouteExecution
@@ -115,7 +116,7 @@ class TestCollectionFlow:
         """Testa o fluxo completo de uma coleta"""
         # 1. Iniciar coleta
         self.collection.status = 'in_progress'
-        self.collection.start_time = datetime.now()
+        self.collection.start_time = timezone.now()
         self.collection.save()
         
         assert self.collection.status == 'in_progress'
@@ -138,12 +139,12 @@ class TestCollectionFlow:
         
         # 3. Coletar pontos
         item1.collected = True
-        item1.collected_at = datetime.now()
+        item1.collected_at = timezone.now()
         item1.weight = Decimal('300.0')
         item1.save()
         
         item2.collected = True
-        item2.collected_at = datetime.now()
+        item2.collected_at = timezone.now()
         item2.weight = Decimal('150.0')
         item2.save()
         
@@ -155,7 +156,7 @@ class TestCollectionFlow:
         
         # 5. Finalizar coleta
         self.collection.status = 'completed'
-        self.collection.end_time = datetime.now()
+        self.collection.end_time = timezone.now()
         self.collection.distance_traveled = Decimal('15.5')
         self.collection.fuel_consumed = Decimal('25.0')
         self.collection.save()
@@ -181,7 +182,7 @@ class TestCollectionFlow:
         
         # Coletar apenas o primeiro ponto
         item1.collected = True
-        item1.collected_at = datetime.now()
+        item1.collected_at = timezone.now()
         item1.weight = Decimal('300.0')
         item1.save()
         
@@ -248,7 +249,7 @@ class TestRouteExecution:
         """Testa ciclo de vida da execução de rota"""
         # 1. Iniciar execução
         self.execution.status = 'in_progress'
-        self.execution.actual_start_time = datetime.now()
+        self.execution.actual_start_time = timezone.now()
         self.execution.save()
         
         assert self.execution.status == 'in_progress'
@@ -261,7 +262,7 @@ class TestRouteExecution:
         
         # 3. Completar execução
         self.execution.status = 'completed'
-        self.execution.actual_end_time = datetime.now()
+        self.execution.actual_end_time = timezone.now()
         self.execution.save()
         
         assert self.execution.status == 'completed'

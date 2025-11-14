@@ -5,6 +5,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters
 from django.db.models import Count, Avg, Sum, Q
 from datetime import date, datetime, timedelta
+from django.utils import timezone
 from .models import (
     CollectionPoint, CollectionPointRoute, CollectionRecord, 
     WasteType, CollectionPointWasteType, CollectionPointPhoto
@@ -103,10 +104,11 @@ class CollectionPointViewSet(viewsets.ModelViewSet):
         Pontos que precisam de coleta
         """
         days_threshold = int(request.query_params.get('days', 7))
-        threshold_date = date.today() - timedelta(days=days_threshold)
+        # Usar datetime ciente de timezone para evitar warnings
+        threshold_dt = timezone.now() - timedelta(days=days_threshold)
         
         points = CollectionPoint.objects.filter(
-            Q(last_collection__lt=threshold_date) |
+            Q(last_collection__lt=threshold_dt) |
             Q(last_collection__isnull=True) |
             Q(status='full')
         ).filter(status__in=['active', 'full'])
@@ -146,10 +148,9 @@ class CollectionPointViewSet(viewsets.ModelViewSet):
         # Criar registro de coleta
         collection_data = request.data.copy()
         collection_data['collection_point'] = collection_point.id
-        collection_data['collected_by'] = request.user.id
-        collection_data['collection_date'] = datetime.now()
+        collection_data['collection_date'] = timezone.now()
         
-        serializer = CollectionRecordSerializer(data=collection_data)
+        serializer = CollectionRecordSerializer(data=collection_data, context={'request': request})
         if serializer.is_valid():
             collection = serializer.save()
             

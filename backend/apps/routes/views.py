@@ -5,6 +5,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters
 from django.db.models import Count, Avg, Sum, Q, F, FloatField, ExpressionWrapper
 from datetime import date, datetime, timedelta
+from django.utils import timezone
 from .models import Route, RouteSchedule, RouteExecution, RouteOptimization
 from .serializers import (
     RouteSerializer, RouteDetailSerializer, RouteScheduleSerializer,
@@ -255,9 +256,8 @@ class RouteExecutionViewSet(viewsets.ModelViewSet):
             return Response({
                 'error': f'Execução não pode ser iniciada. Status atual: {execution.get_status_display()}'
             }, status=status.HTTP_400_BAD_REQUEST)
-        
         execution.status = 'in_progress'
-        execution.actual_start_time = datetime.now()
+        execution.actual_start_time = timezone.now()
         execution.save()
         
         return Response({
@@ -276,9 +276,8 @@ class RouteExecutionViewSet(viewsets.ModelViewSet):
             return Response({
                 'error': f'Execução não pode ser finalizada. Status atual: {execution.get_status_display()}'
             }, status=status.HTTP_400_BAD_REQUEST)
-        
         execution.status = 'completed'
-        execution.actual_end_time = datetime.now()
+        execution.actual_end_time = timezone.now()
         execution.actual_distance = request.data.get('actual_distance', execution.actual_distance)
         execution.fuel_consumed = request.data.get('fuel_consumed', execution.fuel_consumed)
         execution.waste_collected = request.data.get('waste_collected', execution.waste_collected)
