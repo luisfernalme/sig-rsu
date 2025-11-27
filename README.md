@@ -9,7 +9,7 @@ Este sistema foi desenvolvido como parte de um **Trabalho de Conclusão de Curso
 - **Frontend**: React, React Router, Axios, React-Query, React Bootstrap, Leaflet/React-Leaflet, Chart.js
 - **Backend**: Python 3.11, Django, Django REST Framework, GeoDjango, Celery, Redis
 - **Banco de dados**: PostgreSQL, PostGIS
-- **Infraestrutura**: Docker, docker-compose
+- **Infraestrutura**: Docker, Docker Compose
 
 ## Pré‑requisitos
 
