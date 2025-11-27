@@ -1,4 +1,4 @@
-## Sistema Web de Coleta de Resíduos Sólidos Urbanos
+## Sistema Web para Controle da Coleta de Resíduos Sólidos Urbanos
 
 Sistema completo para gestão da coleta de resíduos sólidos urbanos, com backend em **Django + Django REST Framework + PostGIS**, frontend em **React** e infraestrutura **dockerizada** com PostgreSQL/PostGIS, Redis e Celery.
 
