@@ -4,6 +4,10 @@ Sistema completo para gestão da coleta de resíduos sólidos urbanos, com backe
 
 Este sistema foi desenvolvido como parte de um **Trabalho de Conclusão de Curso (TCC)** do curso de **Sistemas de Informação** da **Universidade Federal de Viçosa - Campus Rio Paranaíba (UFV‑CRP)**.
 
+![Tela de pontos de coleta](docs/img/res_pontosColeta.png)
+
+![Modal de criação e visualização de rota](docs/img/res_telaRotas_modal_rotaGerada.png)
+
 ## Tecnologias principais
 
 - **Frontend**: React, React Router, Axios, React-Query, React Bootstrap, Leaflet/React-Leaflet, Chart.js
@@ -32,9 +36,26 @@ Na raiz do repositório `sistema-coleta-rsu`:
    ```powershell
    docker compose up
    ```
-   
+
 2. (Opcional) Criar um superusuário para acesso ao Django Admin e ao sistema:
 
    ```powershell
    docker compose exec -T backend python manage.py createsuperuser
    ```
+
+## Documentação
+
+Os documentos complementares do projeto estao disponiveis na pasta `docs/`:
+
+- [documentacao_tecnica.pdf](docs/documentacao_tecnica.pdf): documentacao tecnica com arquitetura, componentes e detalhes de implementacao.
+- [guia_usuario.pdf](docs/guia_usuario.pdf): guia pratico de uso das funcionalidades do sistema.
+
+## Galeria
+
+![Modal de criação de coleta](docs/img/res_modalColeta.png)
+
+![Tela de veículos e motoristas](docs/img/res_veiculos.png)
+
+![Fluxo de criação de novo ponto no mapa](docs/img/res_telaPontosNovoPonto.png)
+
+![Tela de gestão de coletas](docs/img/res_telaColeta.png)
