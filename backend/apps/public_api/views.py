@@ -336,15 +336,12 @@ def collection_points_map(request):
     """
     Pontos de coleta para exibição em mapa
     """
-    points = CollectionPoint.objects.filter(status='active').values(
-        'id', 'name', 'code', 'point_type', 'address', 'neighborhood',
-        'location', 'current_fill_level'
-    )
-    
-    # Converter para formato adequado para mapas
-    # GeoJSON FeatureCollection
+    # Pontos operacionais: 'active' e 'full' (manutenção/inativos ficam de fora)
+    points = CollectionPoint.objects.filter(status__in=['active', 'full'])
+
+    # Converter para GeoJSON FeatureCollection
     features = []
-    for point in CollectionPoint.objects.filter(status='active'):
+    for point in points:
         if point.location:
             features.append({
                 'type': 'Feature',
@@ -359,8 +356,8 @@ def collection_points_map(request):
                     'type': point.point_type,
                     'address': point.address,
                     'neighborhood': point.neighborhood,
-                    'fill_level': point.current_fill_level,
-                    'status': 'full' if point.current_fill_level >= 80 else 'normal'
+                    'fill_level': 100 if point.status == 'full' else 0,
+                    'status': 'full' if point.status == 'full' else 'normal',
                 }
             })
     return Response({

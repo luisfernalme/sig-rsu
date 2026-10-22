@@ -39,7 +39,7 @@ class ReportsViewSet(viewsets.ViewSet):
         total_routes = Route.objects.count()
         active_routes = Route.objects.filter(status='active').count()
         total_collection_points = CollectionPoint.objects.count()
-        full_collection_points = CollectionPoint.objects.filter(current_fill_level__gte=80).count()
+        full_collection_points = CollectionPoint.objects.filter(status='full').count()
         
         # Estatísticas do dia
         collections_today = CollectionRecord.objects.filter(collection_date__date=today).count()
@@ -71,7 +71,7 @@ class ReportsViewSet(viewsets.ViewSet):
             next_maintenance__lte=today
         ).count()
         points_need_collection = CollectionPoint.objects.filter(
-            Q(current_fill_level__gte=70) |
+            Q(status='full') |
             Q(last_collection__lt=week_ago) |
             Q(last_collection__isnull=True)
         ).count()
@@ -396,7 +396,7 @@ def quick_stats(request):
             current_driver__isnull=True
         ).count(),
         'points_need_attention': CollectionPoint.objects.filter(
-            current_fill_level__gte=80
+            status='full'
         ).count()
     }
     

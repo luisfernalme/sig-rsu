@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters
+from django.db.models import Count, Q
 
 from .models import Collection, CollectionItem
 from .serializers import CollectionSerializer, CollectionCreateSerializer, CollectionItemSerializer
@@ -13,7 +14,12 @@ from .serializers import CollectionSerializer, CollectionCreateSerializer, Colle
 class CollectionViewSet(viewsets.ModelViewSet):
     """ViewSet para gerenciar coletas"""
     
-    queryset = Collection.objects.all()
+    queryset = Collection.objects.select_related(
+        'route', 'vehicle', 'driver'
+    ).prefetch_related('collection_items__collection_point').annotate(
+        _total_points=Count('collection_items'),
+        _points_completed=Count('collection_items', filter=Q(collection_items__collected=True)),
+    )
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['status', 'route', 'vehicle', 'scheduled_date']

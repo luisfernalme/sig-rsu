@@ -4,6 +4,10 @@ import Cookies from "js-cookie";
 const API_BASE_URL =
   process.env.REACT_APP_API_URL || "http://localhost:8000/api";
 
+// Tamanho de página usado nas listagens que precisam de todos os registros
+// (a API pagina em 20 itens por padrão; o backend limita a 10.000).
+const LIST_PAGE_SIZE = 10000;
+
 // Configuração do axios
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -103,7 +107,9 @@ export const authAPI = {
 // Serviços de rotas
 export const routesAPI = {
   getRoutes: async (params = {}) => {
-    const response = await api.get("/routes/", { params });
+    const response = await api.get("/routes/", {
+      params: { page_size: LIST_PAGE_SIZE, ...params },
+    });
     return response.data;
   },
 
@@ -136,7 +142,9 @@ export const routesAPI = {
 // Serviços de veículos
 export const vehiclesAPI = {
   getVehicles: async (params = {}) => {
-    const response = await api.get("/vehicles/", { params });
+    const response = await api.get("/vehicles/", {
+      params: { page_size: LIST_PAGE_SIZE, ...params },
+    });
     return response.data;
   },
 
@@ -164,7 +172,9 @@ export const vehiclesAPI = {
 // Serviços de motoristas
 export const driversAPI = {
   getDrivers: async (params = {}) => {
-    const response = await api.get("/drivers/", { params });
+    const response = await api.get("/drivers/", {
+      params: { page_size: LIST_PAGE_SIZE, ...params },
+    });
     return response.data;
   },
 
@@ -202,7 +212,9 @@ export const driversAPI = {
 // Serviços de pontos de coleta
 export const collectionPointsAPI = {
   getCollectionPoints: async (params = {}) => {
-    const response = await api.get("/collection-points/", { params });
+    const response = await api.get("/collection-points/", {
+      params: { page_size: LIST_PAGE_SIZE, ...params },
+    });
     return response.data;
   },
 
@@ -330,7 +342,9 @@ export const reportsAPI = {
 // Serviços de coletas
 export const collectionsAPI = {
   getCollections: async (params = {}) => {
-    const response = await api.get("/collections/", { params });
+    const response = await api.get("/collections/", {
+      params: { page_size: LIST_PAGE_SIZE, ...params },
+    });
     return response.data;
   },
 

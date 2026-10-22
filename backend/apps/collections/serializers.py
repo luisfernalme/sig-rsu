@@ -25,8 +25,8 @@ class CollectionSerializer(serializers.ModelSerializer):
     vehicle_plate = serializers.CharField(source='vehicle.license_plate', read_only=True)
     driver_name_display = serializers.SerializerMethodField(read_only=True)
     duration = serializers.ReadOnlyField()
-    points_completed = serializers.ReadOnlyField()
-    total_points = serializers.ReadOnlyField()
+    points_completed = serializers.SerializerMethodField(read_only=True)
+    total_points = serializers.SerializerMethodField(read_only=True)
     collection_items = CollectionItemSerializer(many=True, read_only=True)
     
     class Meta:
@@ -48,6 +48,16 @@ class CollectionSerializer(serializers.ModelSerializer):
         if obj.driver:
             return obj.driver.name
         return obj.driver_name or "—"
+
+    def get_points_completed(self, obj):
+        """Retorna o número de pontos coletados, usando anotação quando disponível"""
+        val = getattr(obj, '_points_completed', None)
+        return val if val is not None else obj.points_completed
+
+    def get_total_points(self, obj):
+        """Retorna o número total de pontos da rota, usando anotação quando disponível"""
+        val = getattr(obj, '_total_points', None)
+        return val if val is not None else obj.total_points
     
     def validate(self, data):
         """Validações customizadas"""

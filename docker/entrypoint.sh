@@ -20,5 +20,22 @@ echo "Coletando arquivos estáticos..."
 python manage.py collectstatic --noinput
 
 # Iniciar servidor Django
-echo "Iniciando servidor Django..."
-exec python manage.py runserver 0.0.0.0:8000
+# Mesma regra do settings.py: true/1/yes, sem diferenciar maiúsculas
+DEBUG_NORMALIZED=$(echo "${DEBUG:-true}" | tr '[:upper:]' '[:lower:]')
+case "$DEBUG_NORMALIZED" in
+  true|1|yes) IS_DEBUG=1 ;;
+  *) IS_DEBUG=0 ;;
+esac
+
+if [ "$IS_DEBUG" = "1" ]; then
+  echo "Iniciando servidor de desenvolvimento Django..."
+  exec python manage.py runserver 0.0.0.0:8000
+else
+  echo "Iniciando servidor Gunicorn (produção)..."
+  exec gunicorn config.wsgi:application \
+    --bind 0.0.0.0:8000 \
+    --workers 4 \
+    --threads 4 \
+    --timeout 120 \
+    --access-logfile -
+fi

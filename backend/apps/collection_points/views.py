@@ -21,7 +21,7 @@ class CollectionPointViewSet(viewsets.ModelViewSet):
     """
     ViewSet completo para pontos de coleta
     """
-    queryset = CollectionPoint.objects.all()
+    queryset = CollectionPoint.objects.select_related('created_by').all()
     serializer_class = CollectionPointSerializer
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
